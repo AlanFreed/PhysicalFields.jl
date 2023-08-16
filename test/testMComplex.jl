@@ -1,11 +1,12 @@
 module testMComplex
 
 using
-    PhysicalFields
+    ..PhysicalFields
 
-export run
+export
+    run
 
-function run()
+function run(at_dir::String)
     println("This function tests mutable complex numbers.")
     x = MComplex(2 + 3im)
     y = MComplex(conj(x))
@@ -71,6 +72,23 @@ function run()
     println("sqrt(z)^2 = ", toString(sqrt(z)^2; format, precision, aligned))
     println()
     println("If these answers make sense, then this test passes.")
+    println()
+    wi = 1.23 + 4.56im
+    wj = 3.21 - 6.54im
+    println("Now we test writing/reading mutable complex to/from a file.")
+    my_dir_path = string(at_dir, "/test/files/")
+    json_stream = openJSONWriter(my_dir_path, "testMComplex.json")
+    toFile(wi, json_stream)
+    toFile(MComplex(wj), json_stream)
+    close(json_stream)
+    json_stream = openJSONReader(my_dir_path, "testMComplex.json")
+    ri = fromFile(Complex, json_stream)
+    println("The instance of type Complex  read in is ", toString(ri),
+        ". It should read as $wi.")
+    rj = fromFile(MComplex,json_stream)
+    println("The instance of type MComplex read in is ", toString(rj),
+        ". It should read as $wj.")
+    close(json_stream)
     return nothing
 end
 

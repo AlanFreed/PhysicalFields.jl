@@ -1,13 +1,11 @@
 module testPhysicalUnits
 
-
 using
-    PhysicalFields
-
+    ..PhysicalFields
 
 export run
 
-function run()
+function run(at_dir::String)
     println("CGS units:")
     println("   barye:           ", toString(BARYE))
     println("   centigrade:      ", toString(CENTIGRADE))
@@ -15,7 +13,6 @@ function run()
     println("   dyne:            ", toString(DYNE))
     println("   erg:             ", toString(ERG))
     println("   gram:            ", toString(GRAM), "\n")
-    println("   dimensionless:   ", toString(CGS_DIMENSIONLESS))
     println("   mass:            ", toString(CGS_MASS))
     println("   damping:         ", toString(CGS_DAMPING))
     println("   stiffness:       ", toString(CGS_STIFFNESS))
@@ -61,7 +58,6 @@ function run()
     println("   meter:           ", toString(METER))
     println("   newton:          ", toString(NEWTON))
     println("   pascal:          ", toString(PASCAL), "\n")
-    println("   dimensionless:   ", toString(SI_DIMENSIONLESS))
     println("   mass:            ", toString(SI_MASS))
     println("   damping:         ", toString(SI_DAMPING))
     println("   stiffness:       ", toString(SI_STIFFNESS))
@@ -105,9 +101,28 @@ function run()
     else
         truth = "false"
     end
-    print("   barye  == pascal     = ", string(truth))
-    print()
+    println("   barye  == pascal     = ", string(truth))
+    println()
+    println("Test reading and writing CGS and SI units from/to a JSON file.")
+    println()
+    my_dir_path = string(at_dir, "/test/files/")
+    json_stream = openJSONWriter(my_dir_path, "testPhysicalUnits.json")
+    toFile(Dimensionless(), json_stream)
+    toFile(CGS_ENTROPY, json_stream)
+    toFile(SI_ENTROPY, json_stream)
+    close(json_stream)
+    json_stream = openJSONReader(my_dir_path, "testPhysicalUnits.json")
+    unitless = fromFile(PhysicalUnits, json_stream)
+    println("Dimensionless units read in as: ", toString(unitless),
+        ". It should read as: ", toString(Dimensionless()), ".")
+    cgs = fromFile(PhysicalUnits, json_stream)
+    println("An instance of type CGS read in as: ", toString(cgs),
+        ". It should read as: ", toString(CGS_ENTROPY))
+    si = fromFile(PhysicalUnits, json_stream)
+    println("An instance of type SI  read in as: ", toString(si),
+        ".  It should read as: ", toString(SI_ENTROPY), ".")
+    close(json_stream)
     return nothing
 end
 
-end  # testPhysicalSystemsOfUnits
+end  # testPhysicalUnits

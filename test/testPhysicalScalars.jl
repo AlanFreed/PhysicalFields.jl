@@ -1,18 +1,18 @@
 module testPhysicalScalars
 
 using
-    PhysicalFields
+    ..PhysicalFields
 
 function run()
     format = 'F'
     precision = 5
     aligned = false
-    tC = newPhysicalScalar(CENTIGRADE)
+    tC = PhysicalScalar(CENTIGRADE)
     set!(tC, 37.0)
     tK = toSI(tC)
     s1 = "Body temperature = "
     println(s1, toString(tC; format, precision, aligned), " = ", toString(tK; format, precision, aligned))
-    x  = newPhysicalScalar(CGS_ACCELERATION)
+    x  = PhysicalScalar(CGS_ACCELERATION)
     set!(x, -π)
     aligned = true
     s1 = "This scalar should print as: -3.1416E+00 cm/s²\n"
@@ -20,7 +20,7 @@ function run()
     s3 = "\nand whose absolute value is: "
     format = 'E'
     println(s1, s2, toString(x; format, precision, aligned), s3, toString(abs(x); format, precision, aligned))
-    σ  = newPhysicalScalar(PASCAL)
+    σ  = PhysicalScalar(PASCAL)
     set!(σ, 1.234)
     y  = MReal(0.001234)
     dϵ = PhysicalScalar(y, PhysicalFields.SI_STRAIN_RATE)
@@ -38,7 +38,7 @@ function run()
     s8 = string("strain rate     dϵ = ", toString(toSI(toCGS(dϵ)); format, precision, aligned))
     s9 = string("stress power  σ dϵ = ", toString(toSI(toCGS(σ*dϵ)); format, precision, aligned))
     println(s7, "\n", s8, "\n", s9)
-    ρ  = newPhysicalScalar(CGS(-3, 1, 0, 0))
+    ρ  = PhysicalScalar(CGS(-3, 1, 0, 0))
     set!(ρ, 1.025)
     s10 = string("Density of salt water is: ", toString(ρ; format, precision, aligned))
     oneOnρ = 1 / ρ
@@ -48,9 +48,9 @@ function run()
     s13 = string("   therefore 1/ρ is:      ", toString(toSI(oneOnρ); format, precision, aligned))
     println(s12, "\n", s13)
     println("Testing scalar arithmetic:")
-    a = newPhysicalScalar(CENTIMETER)
+    a = PhysicalScalar(CENTIMETER)
     set!(a, 4.0)
-    b = newPhysicalScalar(CENTIMETER)
+    b = PhysicalScalar(CENTIMETER)
     set!(b, -2.0)
     println("     a = ", toString(a; format, precision, aligned))
     println("     b = ", toString(b; format, precision, aligned))

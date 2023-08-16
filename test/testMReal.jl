@@ -1,12 +1,11 @@
 module testMReal
 
-
 using
-    PhysicalFields
+    ..PhysicalFields
 
 export run
 
-function run()
+function run(at_dir::String)
     println("This function tests mutable floating-point numbers.")
     x = MReal(-3.0)
     y = MReal(2.0)
@@ -82,6 +81,23 @@ function run()
     println("sqrt(z)^2 = ", toString(sqrt(z)^2; format, precision, aligned))
     println()
     println("If these answers make sense, then this test passes.")
+    println()
+    wi = 1.234
+    wj = -4.321
+    println("Now we test writing/reading mutable reals to/from a file.")
+    my_dir_path = string(at_dir, "/test/files/")
+    json_stream = openJSONWriter(my_dir_path, "testMReal.json")
+    toFile(wi, json_stream)
+    toFile(MReal(wj), json_stream)
+    close(json_stream)
+    json_stream = openJSONReader(my_dir_path, "testMReal.json")
+    ri = fromFile(Real, json_stream)
+    println("The instance of type Real  read in is ", toString(ri),
+        ". It should read as $wi.")
+    rj = fromFile(MReal, json_stream)
+    println("The instance of type MReal read in is ", toString(rj),
+        ". It should read as $wj.")
+    close(json_stream)
     return nothing
 end
 

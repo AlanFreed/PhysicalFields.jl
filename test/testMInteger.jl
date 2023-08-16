@@ -1,11 +1,11 @@
 module testMInteger
 
 using
-    PhysicalFields
+    ..PhysicalFields
 
 export run
 
-function run()
+function run(at_dir::String)
     println("This function tests mutable integers.")
     i = MInteger(-2)
     j = MInteger(3)
@@ -40,6 +40,25 @@ function run()
     println("    sign(i)     = ", toString(sign(i); aligned))
     println()
     println("If these answers make sense, then this test passes.")
+    println()
+    wi = 123
+    wj = 456
+    s = "Now we test writing/reading mutable integers to/from a file."
+    my_dir_path = string(at_dir, "/test/files/")
+    json_stream = openJSONWriter(my_dir_path, "testMInteger.json")
+    toFile(s, json_stream)
+    toFile(wi, json_stream)
+    toFile(MInteger(wj), json_stream)
+    close(json_stream)
+    json_stream = openJSONReader(my_dir_path, "testMInteger.json")
+    println(fromFile(String, json_stream))
+    ri = fromFile(Integer, json_stream)
+    println("The instance of type Integer  read in is ", toString(ri),
+        ". It should read as $wi.")
+    rj = fromFile(MInteger, json_stream)
+    println("The instance of type MInteger read in is ", toString(rj),
+        ". It should read as ", toString(wj), ".")
+    close(json_stream)
     return nothing
 end
 
