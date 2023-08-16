@@ -4,44 +4,50 @@
 
 # PhysicalScalars
 
+A physical scalar, or scalar field, is a number associated with a set of physical units, e.g., temperature.
+
 ## Concrete Types
 
-For a scalar field
-
+For a scalar field, use the type
 ```
 struct PhysicalScalar <: PhysicalField
-    x::MReal            # value of the scalar in its specified system of units
-    u::PhysicalUnits    # the scalar's physical units
+    x::MReal            # value of a scalar in its specified system of units
+    u::PhysicalUnits    # physical units of the scalar
 end
 ```
+The value held by a scalar is mutable.
 
-and for an array of a scalar field
-
+For an array of a scalar fields, use the type
 ```
 struct ArrayOfPhysicalScalars
     e::UInt32           # number of entries or elements held in the array
-    a::Array            # array holding values of a physical scalar
-    u::PhysicalUnits    # units of this physical scalar
+    a::Vector           # array holding values of a physical scalar
+    u::PhysicalUnits    # physical units of the scalar array
 end
 ```
-
-where all entries in an array have the same physical units.
+where all entries in an array have the same physical units. These array entries are mutable.
 
 ## Constructors
 
-Constructor
+There are two internal constructors. The first assumes the value of its field is zero, while the second assigns a value to this field.
 
-```
-function newPhysicalScalar(units::PhysicalUnits)::PhysicalScalar
-```
+### PhysicalScalar
 
-supplies a new scalar whose value is 0.0 and whose physical units are those supplied by the argument `units`, and
-
+Constructors
 ```
-function newArrayOfPhysicalScalars(len::Integer, s₁::PhysicalScalar)::ArrayOfPhysicalScalars
+function PhysicalScalar(units::PhysicalUnits)
+function PhysicalScalar(value::Number, units::PhysicalUnits)
 ```
+These constructors will return a new scalar object whose physical units are specified by argument `units.` The first constructor assigns a numeric value of zero to the scalar field, while the second constructor assigns to it the numeric value specified by argument `value.`
 
-supplies a new array of scalers where `s₁` is the first entry in this array of scalars. The array has a length of `len` ∈ \{1, …, 4294967295\}.
+### ArrayOfPhysicalScalars
+
+Constructors
+```
+function ArrayOfPhysicalScalars(arr_len::Integer, units::PhysicalUnits)
+function ArrayOfPhysicalScalars(arr_len::Integer, sca_vals::Vector, units::PhysicalUnits)
+```
+These constructors will return a new array of scalars whose length is specified by argument `arr_len` that can accept values within the range of 1…4,294,967,295, wherein all elements of the array will have physical units specified by argument `units.` The first constructor creates an array with zero values, while the second constructor assigns values to this internal array, as supplied by the vector argument `sca_vals,` which is an array of dimension `arr_len.`
 
 # Methods
 ## Get and Set!
@@ -58,7 +64,6 @@ While these functions are to be used to retrieve and assign a `PhysicalScalar` f
 ```
 function Base.:(getindex)(y::ArrayOfPhysicalScalars, idx::Integer)::PhysicalScalar
 function Base.:(setindex!)(y::ArrayOfPhysicalScalars, val::PhysicalScalar, idx::Integer)
-
 ```
 
 Because these extend the `Base` functions `getindex` and `setindex!`, the bracket notation `[]` can be used to retrieve and assign individual scalar fields belonging to an instance of `ArrayOfPhysicalScalars`.
@@ -66,47 +71,56 @@ Because these extend the `Base` functions `getindex` and `setindex!`, the bracke
 ## Copy
 
 For making shallow copies, use
-
 ```
 function Base.:(copy)(s::PhysicalScalar)::PhysicalScalar
 function Base.:(copy)(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
 ```
-
 and for making deep copies, use
-
 ```
 function Base.:(deepcopy)(s::PhysicalScalar)::PhysicalScalar
 function Base.:(deepcopy)(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
 ```
 
-## Type conversions
+## Readers and Writers
 
 Conversion of a scalar field into a string is provided for by the method
-
 ```
 function toString(y::PhysicalScalar;
                   format::Char='E',
                   precision::Int=5,
                   aligned::Bool=false)::String
 ```
+where the keyword `format` is a character that, whenever its value is 'E' or 'e', represents the scalar in a scientific notation; otherwise, it will be represented in a fixed-point notation. Keyword `precision` specifies the number of significant digits to be represented in the string, which can accept values from the set \{3…7\}. Keyword `aligned,` when set to `true,` will add a white space in front of any non-negative scalar string representation, e.g., this could be useful when printing out a matrix of scalars; otherwise, there is no leading white space in its string representation, which is the default.
 
-where the keyword `format` is a character that, whenever its value is 'E' or 'e', represents the scalar in a scientific notation; otherwise, it will be represented in a fixed-point notation. Keyword `precision` specifies the number of significant digits to be represented in the string, which can accept values from the set \{3…7\}. Keyword `aligned`, when set to `true`, will add a white space in front of any non-negative scalar string representation, e.g., this could be useful when printing out a matrix of scalars; otherwise, there is no leading white space in its string representation, which is the default.
+No parser is provided here.
+
+To write a scalar or an array of scalars to a JSON file, one can call
+```
+function toFile(y::PhysicalScalar, json_stream::IOStream)
+function toFile(y::ArrayOfPhysicalScalars, json_stream::IOStream)
+```
+where argument `json_stream` comes from a call to `openJSONWriter.` 
+
+To read a scalar or an array of scalars from a JSON file, one can call
+```
+function fromFile(::Type{PhysicalScalar}, json_stream::IOStream)::PhysicalScalar
+function fromFile(::Type{ArrayOfPhysicalScalars}, json_stream::IOStream)::ArrayOfPhysicalScalars
+```
+where argument `json_stream` comes from a call to `openJSONReader.` 
+
+## Type Conversions
 
 Retrieving the real number held by a scalar is done by
-
 ```
 function toReal(s::PhysicalScalar)::Real
 ```
 
-Converting a scalar field between CGS and SI units is accomplished via
-
+Convert a scalar field between CGS and SI units by calling
 ```
 function toCGS(s::PhysicalScalar)::PhysicalScalar
 function toSI(s::PhysicalScalar)::PhysicalScalar
 ```
-
-and to convert an array of scalars between CGS and SI units, use
-
+and convert an array of scalars between CGS and SI units by calling
 ```
 function toCGS(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
 function toSI(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
@@ -114,25 +128,25 @@ function toSI(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
 
 ## Unit Testing
 
+To test a scalar or an array of scalars to see if they are dimensionless, call
 ```
 function isDimensionless(s::PhysicalScalar)::Bool
 function isDimensionless(as::ArrayOfPhysicalScalars)::Bool
 ```
-
+To test a scalar or an array of scalars to see if they have CGS units, call
 ```
 function isCGS(s::PhysicalScalar)::Bool
 function isCGS(as::ArrayOfPhysicalScalars)::Bool
 ```
-
+To test a scalar or an array of scalars to see if they have SI units, call
 ```
 function isSI(s::PhysicalScalar)::Bool
 function isSI(as::ArrayOfPhysicalScalars)::Bool
 ```
 
-
 ## Operators
 
-The following operators have been overloaded so that they can handle objects of type `PhysicalScalar`, whenever such operations make sense, e.g., one cannot add two scalars with different units; however, one can multiply them. 
+The following operators have been overloaded so that they can handle objects of type `PhysicalScalar,` whenever such operations make sense, e.g., one cannot add two scalars with different units; however, one can multiply them. 
 
 The overloaded logical operators include: `==`, `≠`, `≈`, `<`, `≤`, `≥` and `>`. 
 
@@ -159,7 +173,7 @@ function Base.:(floor)(y::PhysicalScalar)::PhysicalScalar
 ```
 function Base.:(sqrt)(y::PhysicalScalar)::PhysicalScalar
 ```
-where taking the square root of a scalar requires the powers of its physical units be divisible by 2.
+where taking the square root of a scalar requires the powers of its physical units be exactly divisible by 2.
 
 The following methods are math functions that return a real number whose arguments are physical scalars.
 
@@ -170,7 +184,7 @@ function Base.:(sign)(y::PhysicalScalar)::Real
 function Base.:(atan)(y::PhysicalScalar, x::PhysicalScalar)::Real
 ```
 
-provided that rise `y` has the same units as run `x`.
+provided that the rise `y` has the same physical units as the run `x`.
 
 The following methods are math functions that return a real number whose scalar argument is dimensionless.
 

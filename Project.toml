@@ -1,12 +1,17 @@
 name = "PhysicalFields"
 uuid = "ecb0663d-aa47-424e-b5ff-03a0dca9671a"
 authors = ["Alan Freed <alan.d.freed@proton.me>"]
-version = "1.0.0"
+version = "1.1.0"
 
 [deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+StructTypes = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
