@@ -29,11 +29,11 @@ end
 # Methods for converting between systems of units.
 
 function toCGS(t::PhysicalTensor)::PhysicalTensor
-    if isCGS(t)
+    if isDimensionless(t) || isCGS(t)
         return t
     elseif isSI(t)
         units = CGS(t.u.m, t.u.kg, t.u.s, t.u.K)
-        tensor = newPhysicalTensor(t.r, t.c, units)
+        tensor = PhysicalTensor(t.r, t.c, units)
         if (t.u == KELVIN)
             for i in 1:t.r
                 for j in 1:t.c
@@ -49,17 +49,17 @@ function toCGS(t::PhysicalTensor)::PhysicalTensor
         end
         return tensor
     else
-        msg = "Units of tensor 't' must be either CGS or SI."
+        msg = "Tensors must be dimensionless or have CGS or SI units."
         throw(ErrorException(msg))
     end
 end
 
 function toCGS(at::ArrayOfPhysicalTensors)::ArrayOfPhysicalTensors
-    if isCGS(at)
+    if isDimensionless(at) || isCGS(at)
         return at
     elseif isSI(at)
         units = CGS(at.u.m, at.u.kg, at.u.s, at.u.K)
-        pt₁ = newPhysicalTensor(at.r, at.c, units)
+        pt₁ = PhysicalTensor(at.r, at.c, units)
         if (at.u == KELVIN)
             for i in 1:at.r
                 for j in 1:at.c
@@ -73,7 +73,7 @@ function toCGS(at::ArrayOfPhysicalTensors)::ArrayOfPhysicalTensors
                 end
             end
         end
-        tenArr = newArrayOfPhysicalTensors(at.e, pt₁)
+        tenArr = ArrayOfPhysicalTensors(at.e, at.r, at.c, units)
         if (at.u == KELVIN)
             for i in 2:at.e
                 for j in 1:at.r
@@ -93,7 +93,7 @@ function toCGS(at::ArrayOfPhysicalTensors)::ArrayOfPhysicalTensors
         end
         return tenArr
     else
-        msg = "Units for the array of tensors 'at' must be either CGS or SI."
+        msg = "Tensor arrays must be dimensionless or have CGS or SI units."
         throw(ErrorException(msg))
     end
 end
@@ -103,7 +103,7 @@ function toSI(t::PhysicalTensor)::PhysicalTensor
         return t
     elseif isCGS(t)
         units = SI(t.u.cm, t.u.g, t.u.s, t.u.C)
-        tensor = newPhysicalTensor(t.r, t.c, units)
+        tensor = PhysicalTensor(t.r, t.c, units)
         if (t.u == CENTIGRADE)
             for i in 1:t.r
                 for j in 1:t.c
@@ -119,7 +119,7 @@ function toSI(t::PhysicalTensor)::PhysicalTensor
         end
         return tensor
     else
-        msg = "Units of tensor 't' must be either CGS or SI."
+        msg = "Tensors must be dimensionless or have CGS or SI units."
         throw(ErrorException(msg))
     end
 end
@@ -129,7 +129,7 @@ function toSI(at::ArrayOfPhysicalTensors)::ArrayOfPhysicalTensors
         return at
     elseif isCGS(at)
         units = SI(at.u.cm, at.u.g, at.u.s, at.u.C)
-        pt₁ = newPhysicalTensor(at.r, at.c, units)
+        pt₁ = PhysicalTensor(at.r, at.c, units)
         if (at.u == CENTIGRADE)
             for i in 1:at.r
                 for j in 1:at.c
@@ -143,7 +143,7 @@ function toSI(at::ArrayOfPhysicalTensors)::ArrayOfPhysicalTensors
                 end
             end
         end
-        tenArr = newArrayOfPhysicalTensors(at.e, pt₁)
+        tenArr = ArrayOfPhysicalTensors(at.e, at.r, at.c, units)
         if (at.u == CENTIGRADE)
             for i in 2:at.e
                 for j in 1:at.r
@@ -163,7 +163,7 @@ function toSI(at::ArrayOfPhysicalTensors)::ArrayOfPhysicalTensors
         end
         return tenArr
     else
-        msg = "Units for the array of tensors 'at' must be either CGS or SI."
+        msg = "Tensor arrays must be dimensionless or have CGS or SI units."
         throw(ErrorException(msg))
     end
 end
@@ -177,7 +177,7 @@ function Base.:(copy)(y::PhysicalTensor)::PhysicalTensor
     columns = copy(y.c)
     matrix  = copy(y.m)
     units   = copy(y.u)
-    return PhysicalTensor(UInt8(rows), UInt8(columns), matrix, units)
+    return PhysicalTensor(rows, columns, matrix, units)
 end
 
 function Base.:(copy)(y::ArrayOfPhysicalTensors)::ArrayOfPhysicalTensors
@@ -186,7 +186,7 @@ function Base.:(copy)(y::ArrayOfPhysicalTensors)::ArrayOfPhysicalTensors
     columns = copy(y.c)
     array   = copy(y.a)
     units   = copy(y.u)
-    return ArrayOfPhysicalTensors(UInt32(entries), UInt8(rows), UInt8(columns), array, units)
+    return ArrayOfPhysicalTensors(entries, rows, columns, array, units)
 end
 
 function Base.:(deepcopy)(y::PhysicalTensor)::PhysicalTensor
@@ -194,7 +194,7 @@ function Base.:(deepcopy)(y::PhysicalTensor)::PhysicalTensor
     columns = deepcopy(y.c)
     matrix  = deepcopy(y.m)
     units   = deepcopy(y.u)
-    return PhysicalTensor(UInt8(rows), UInt8(columns), matrix, units)
+    return PhysicalTensor(rows, columns, matrix, units)
 end
 
 function Base.:(deepcopy)(y::ArrayOfPhysicalTensors)::ArrayOfPhysicalTensors
@@ -203,7 +203,7 @@ function Base.:(deepcopy)(y::ArrayOfPhysicalTensors)::ArrayOfPhysicalTensors
     columns = deepcopy(y.c)
     array   = deepcopy(y.a)
     units   = deepcopy(y.u)
-    return ArrayOfPhysicalTensors(UInt32(entries), UInt8(rows), UInt8(columns), array, units)
+    return ArrayOfPhysicalTensors(entries, rows, columns, array, units)
 end
 
 #=
@@ -218,8 +218,9 @@ function Base.:≠(y::PhysicalTensor, z::PhysicalTensor)::Bool
     if (y.r ≠ z.r) || (y.c ≠ z.c)
         return true
     end
-    if isEquivalent(y.u, z.u)
-        if ((isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
+    if areEquivalent(y.u, z.u)
+        if ((isDimensionless(y) && isDimensionless(z)) ||
+            (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
             for i in 1:y.r
                 for j in 1:y.c
                     if y.m[i,j] ≠ z.m[i,j]
@@ -246,7 +247,7 @@ function Base.:≠(y::PhysicalTensor, z::PhysicalTensor)::Bool
                 end
             end
         else
-            msg = "Tensors must have units of either CGS or SI."
+            msg = "Tensors must be dimensionless or have CGS or SI units."
             throw(ErrorException(msg))
         end
     else
@@ -264,8 +265,9 @@ function Base.:≈(y::PhysicalTensor, z::PhysicalTensor)::Bool
     if (y.r ≠ z.r) || (y.c ≠ z.c)
         return false
     end
-    if isEquivalent(y.u, z.u)
-        if ((isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
+    if areEquivalent(y.u, z.u)
+        if ((isDimensionless(y) && isDimensionless(z)) ||
+            (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
             for i in 1:y.r
                 for j in 1:y.c
                     if !(y.m[i,j] ≈ z.m[i,j])
@@ -292,7 +294,7 @@ function Base.:≈(y::PhysicalTensor, z::PhysicalTensor)::Bool
                 end
             end
         else
-            msg = "Tensors must have units of either CGS or SI."
+            msg = "Tensors must be dimensionless or have CGS or SI units."
             throw(ErrorException(msg))
         end
     else
@@ -302,7 +304,7 @@ function Base.:≈(y::PhysicalTensor, z::PhysicalTensor)::Bool
 end
 
 function Base.:+(y::PhysicalTensor)::PhysicalTensor
-    tensor = newPhysicalTensor(y.r, y.c, y.u)
+    tensor = PhysicalTensor(y.r, y.c, y.u)
     for i in 1:y.r
         for j in 1:y.c
             tensor[i,j] = +y[i,j]
@@ -312,7 +314,7 @@ function Base.:+(y::PhysicalTensor)::PhysicalTensor
 end
 
 function Base.:-(y::PhysicalTensor)::PhysicalTensor
-    tensor = newPhysicalTensor(y.r, y.c, y.u)
+    tensor = PhysicalTensor(y.r, y.c, y.u)
     for i in 1:y.r
         for j in 1:y.c
             tensor[i,j] = -y[i,j]
@@ -326,9 +328,10 @@ function Base.:+(y::PhysicalTensor, z::PhysicalTensor)::PhysicalTensor
         msg = "Tensor addition requires their matrices to have the same dimensions."
         throw(DimensionMismatch(msg))
     end
-    if isEquivalent(y.u, z.u)
-        if ((isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
-            tensor = newPhysicalTensor(y.r, y.c, y.u)
+    if areEquivalent(y.u, z.u)
+        if ((isDimensionless(y) && isDimensionless(z)) ||
+            (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
+            tensor = PhysicalTensor(y.r, y.c, y.u)
             for i in 1:y.r
                 for j in 1:y.c
                     tensor[i,j] = y[i,j] + z[i,j]
@@ -336,7 +339,7 @@ function Base.:+(y::PhysicalTensor, z::PhysicalTensor)::PhysicalTensor
             end
         elseif (isCGS(y) && isSI(z))
             w = toCGS(z)
-            tensor = newPhysicalTensor(y.r, y.c, y.u)
+            tensor = PhysicalTensor(y.r, y.c, y.u)
             for i in 1:y.r
                 for j in 1:y.c
                     tensor[i,j] = y[i,j] + w[i,j]
@@ -344,14 +347,14 @@ function Base.:+(y::PhysicalTensor, z::PhysicalTensor)::PhysicalTensor
             end
         elseif (isSI(y) && isCGS(z))
             w = toCGS(y)
-            tensor = newPhysicalTensor(w.r, w.c, w.u)
+            tensor = PhysicalTensor(w.r, w.c, w.u)
             for i in 1:w.r
                 for j in 1:w.c
                     tensor[i,j] = w[i,j] + z[i,j]
                 end
             end
         else
-            msg = "Tensors must have either CGS or SI units."
+            msg = "Tensors must be dimensionless or have CGS or SI units."
             throw(ErrorException(msg))
         end
     else
@@ -366,9 +369,10 @@ function Base.:-(y::PhysicalTensor, z::PhysicalTensor)::PhysicalTensor
         msg = "Tensor subtraction requires their matrices have the same dimensions."
         throw(DimensionMismatch(msg))
     end
-    if isEquivalent(y.u, z.u)
-        if ((isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
-            tensor = newPhysicalTensor(y.r, y.c, y.u)
+    if areEquivalent(y.u, z.u)
+        if ((isDimensionless(y) && isDimensionless(z)) ||
+            (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
+            tensor = PhysicalTensor(y.r, y.c, y.u)
             for i in 1:y.r
                 for j in 1:y.c
                     tensor[i,j] = y[i,j] - z[i,j]
@@ -376,7 +380,7 @@ function Base.:-(y::PhysicalTensor, z::PhysicalTensor)::PhysicalTensor
             end
         elseif (isCGS(y) && isSI(z))
             w = toCGS(z)
-            tensor = newPhysicalTensor(y.r, y.c, y.u)
+            tensor = PhysicalTensor(y.r, y.c, y.u)
             for i in 1:y.r
                 for j in 1:y.c
                     tensor[i,j] = y[i,j] - w[i,j]
@@ -384,14 +388,14 @@ function Base.:-(y::PhysicalTensor, z::PhysicalTensor)::PhysicalTensor
             end
         elseif (isSI(y) && isCGS(z))
             w = toCGS(y)
-            tensor = newPhysicalTensor(w.r, w.c, w.u)
+            tensor = PhysicalTensor(w.r, w.c, w.u)
             for i in 1:w.r
                 for j in 1:w.c
                     tensor[i,j] = w[i,j] - z[i,j]
                 end
             end
         else
-            msg = "Tensors must have either CGS or SI units."
+            msg = "Tensors must be dimensionless or have CGS or SI units."
             throw(ErrorException(msg))
         end
     else
@@ -409,10 +413,10 @@ function Base.:*(y::PhysicalTensor, z::PhysicalTensor)::PhysicalTensor
     end
     if ((isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
         units = y.u + z.u
-        tensor = newPhysicalTensor(y.r, z.c, units)
+        tensor = PhysicalTensor(y.r, z.c, units)
         for i in 1:y.r
             for j in 1:z.c
-                scalar = newPhysicalScalar(units)
+                scalar = PhysicalScalar(units)
                 for k in 1:y.c
                     scalar = scalar + y[i,k] * z[k,j]
                 end
@@ -422,10 +426,10 @@ function Base.:*(y::PhysicalTensor, z::PhysicalTensor)::PhysicalTensor
     elseif (isCGS(y) && isSI(z))
         w = toCGS(z)
         units = y.u + w.u
-        tensor = newPhysicalTensor(y.r, w.c, units)
+        tensor = PhysicalTensor(y.r, w.c, units)
         for i in 1:y.r
             for j in 1:w.c
-                scalar = newPhysicalScalar(units)
+                scalar = PhysicalScalar(units)
                 for k in 1:y.c
                     scalar = scalar + y[i,k] * w[k,j]
                 end
@@ -435,10 +439,10 @@ function Base.:*(y::PhysicalTensor, z::PhysicalTensor)::PhysicalTensor
     elseif (isSI(y) && isCGS(z))
         w = toCGS(y)
         units = w.u + z.u
-        tensor = newPhysicalTensor(w.r, z.c, units)
+        tensor = PhysicalTensor(w.r, z.c, units)
         for i in 1:w.r
             for j in 1:z.c
-                scalar = newPhysicalScalar(units)
+                scalar = PhysicalScalar(units)
                 for k in 1:w.c
                     scalar = scalar + w[i,k] * z[k,j]
                 end
@@ -446,7 +450,7 @@ function Base.:*(y::PhysicalTensor, z::PhysicalTensor)::PhysicalTensor
             end
         end
     else
-        msg = "Tensors must have either CGS or SI units."
+        msg = "Tensors must be dimensionless or have CGS or SI units."
         throw(ErrorException(msg))
     end
     return tensor
@@ -460,9 +464,9 @@ function Base.:*(y::PhysicalTensor, z::PhysicalVector)::PhysicalVector
     end
     if ((isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
         units = y.u + z.u
-        vector = newPhysicalVector(y.r, units)
+        vector = PhysicalVector(y.r, units)
         for i in 1:y.r
-            scalar = newPhysicalScalar(units)
+            scalar = PhysicalScalar(units)
             for j in 1:y.c
                 scalar = scalar + y[i,j] * z[j]
             end
@@ -471,9 +475,9 @@ function Base.:*(y::PhysicalTensor, z::PhysicalVector)::PhysicalVector
     elseif (isCGS(y) && isSI(z))
         w = toCGS(z)
         units = y.u + w.u
-        vector = newPhysicalVector(y.r, units)
+        vector = PhysicalVector(y.r, units)
         for i in 1:y.r
-            scalar = newPhysicalScalar(units)
+            scalar = PhysicalScalar(units)
             for j in 1:y.c
                 scalar = scalar + y[i,j] * w[j]
             end
@@ -482,16 +486,16 @@ function Base.:*(y::PhysicalTensor, z::PhysicalVector)::PhysicalVector
     elseif (isSI(y) && isCGS(z))
         w = toCGS(y)
         units = w.u + z.u
-        vector = newPhysicalVector(w.r, units)
+        vector = PhysicalVector(w.r, units)
         for i in 1:w.r
-            scalar = newPhysicalScalar(units)
+            scalar = PhysicalScalar(units)
             for j in 1:y.c
                 scalar = scalar + w[i,j] * z[j]
             end
             vector[i] = scalar
         end
     else
-        msg = "Vectors and tensors must have either CGS or SI units."
+        msg = "Vectors and tensors must be dimensionless or have CGS or SI units."
         throw(ErrorException(msg))
     end
     return vector
@@ -500,7 +504,7 @@ end
 function Base.:*(y::PhysicalScalar, z::PhysicalTensor)::PhysicalTensor
     if ((isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
         units = y.u + z.u
-        tensor = newPhysicalTensor(z.r, z.c, units)
+        tensor = PhysicalTensor(z.r, z.c, units)
         for i in 1:z.r
             for j in 1:z.c
                 tensor[i,j] = y * z[i,j]
@@ -509,7 +513,7 @@ function Base.:*(y::PhysicalScalar, z::PhysicalTensor)::PhysicalTensor
     elseif (isCGS(y) && isSI(z))
         w = toCGS(z)
         units = y.u + w.u
-        tensor = newPhysicalTensor(w.r, w.c, units)
+        tensor = PhysicalTensor(w.r, w.c, units)
         for i in 1:w.r
             for j in 1:w.c
                 tensor[i,j] = y * w[i,j]
@@ -518,21 +522,21 @@ function Base.:*(y::PhysicalScalar, z::PhysicalTensor)::PhysicalTensor
     elseif isSI(y) && isCGS(z)
         w = toCGS(y)
         units = w.u + z.u
-        tensor = newPhysicalTensor(z.r, z.c, units)
+        tensor = PhysicalTensor(z.r, z.c, units)
         for i in 1:z.r
             for j in 1:z.c
                 tensor[i,j] = w * z[i,j]
             end
         end
     else
-        msg = "Scalars and matrices must have either CGS or SI units."
+        msg = "Scalars and tensors must be dimensionless or have CGS or SI units."
         throw(ErrorException(msg))
     end
     return tensor
 end
 
 function Base.:*(y::Union{Real,MNumber}, z::PhysicalTensor)::PhysicalTensor
-    tensor = newPhysicalTensor(z.r, z.c, z.u)
+    tensor = PhysicalTensor(z.r, z.c, z.u)
     for i in 1:z.r
         for j in 1:z.c
             tensor[i,j] = y * z[i,j]
@@ -544,7 +548,7 @@ end
 function Base.:/(y::PhysicalTensor, z::PhysicalScalar)::PhysicalTensor
     if ((isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
         units = y.u - z.u
-        tensor = newPhysicalTensor(y.r, y.c, units)
+        tensor = PhysicalTensor(y.r, y.c, units)
         for i in 1:y.r
             for j in 1:y.c
                 tensor[i,j] = y[i,j] / z
@@ -553,7 +557,7 @@ function Base.:/(y::PhysicalTensor, z::PhysicalScalar)::PhysicalTensor
     elseif (isCGS(y) && isSI(z))
         w = toCGS(z)
         units = y.u - w.u
-        tensor = newPhysicalTensor(y.r, y.c, units)
+        tensor = PhysicalTensor(y.r, y.c, units)
         for i in 1:y.r
             for j in 1:y.c
                 tensor[i,j] = y[i,j] / w
@@ -562,21 +566,21 @@ function Base.:/(y::PhysicalTensor, z::PhysicalScalar)::PhysicalTensor
     elseif (isSI(y) && isCGS(z))
         w = toCGS(y)
         units = w.u - z.u
-        tensor = newPhysicalTensor(w.r, w.c, units)
+        tensor = PhysicalTensor(w.r, w.c, units)
         for i in 1:w.r
             for j in 1:w.c
                 tensor[i,j] = w[i,j] / z
             end
         end
     else
-        msg = "Scalars and matrices must have either CGS or SI units."
+        msg = "Scalars and tensors must be dimensionless or have CGS or SI units."
         throw(ErrorException(msg))
     end
     return tensor
 end
 
 function Base.:/(y::PhysicalTensor, z::Union{Real,MNumber})::PhysicalTensor
-    tensor = newPhysicalTensor(y.r, y.c, y.u)
+    tensor = PhysicalTensor(y.r, y.c, y.u)
     for i in 1:y.r
         for j in 1:y.c
             tensor[i,j] = y[i,j] / z
@@ -591,23 +595,22 @@ function Base.:\(A::PhysicalTensor, b::PhysicalVector)::PhysicalVector
         msg *= "the number of rows in matrix 'A' equal the length of vector 'b'."
         throw(DimensionMismatch(msg))
     end
-    if ((isCGS(A) && isCGS(b)) ||
-        (isSI(A) && isSI(b)))
+    if ((isCGS(A) && isCGS(b)) || (isSI(A) && isSI(b)))
         units = b.u - A.u
         vector = A.m \ b.v
-    elseif isCGS(A) && isSI(b)
+    elseif (isCGS(A) && isSI(b))
         w = toCGS(b)
         units = w.u - A.u
         vector = A.m \ w.v
-    elseif isSI(A) && isCGS(b)
+    elseif (isSI(A) && isCGS(b))
         W = toCGS(A)
         units = b.u - W.u
         vector = W.m \ b.v
     else
-        msg = "Vectors and matrices must have either CGS or SI units."
+        msg = "Vectors and tensors must be dimensionless or have CGS or SI units."
         throw(ErrorException(msg))
     end
-    x = newPhysicalVector(length(vector), units)
+    x = PhysicalVector(length(vector), units)
     for i in 1:x.l
         x.v[i] = vector[i]
     end
@@ -618,20 +621,20 @@ end
 --------------------------------------------------------------------------------
 =#
 
-function toMatrix(t::PhysicalTensor)::StaticMatrix
+function toMatrix(t::PhysicalTensor)::Matrix
     return deepcopy(t.m)
 end
 
 function LinearAlgebra.:(norm)(t::PhysicalTensor, p::Real=2)::PhysicalScalar
     value = norm(t.m, p)
     units = t.u
-    return PhysicalScalar(MReal(value), units)
+    return PhysicalScalar(value, units)
 end
 
 function tensorProduct(y::PhysicalVector, z::PhysicalVector)::PhysicalTensor
     if ((isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
         units = y.u + z.u
-        tensor = newPhysicalTensor(y.l, z.l, units)
+        tensor = PhysicalTensor(y.l, z.l, units)
         for i in 1:y.l
             for j in 1:z.l
                 tensor[i,j] = y[i] * z[j]
@@ -640,7 +643,7 @@ function tensorProduct(y::PhysicalVector, z::PhysicalVector)::PhysicalTensor
     elseif (isCGS(y) && isSI(z))
         w = toCGS(z)
         units = y.u + w.u
-        tensor = newPhysicalTensor(y.l, w.l, units)
+        tensor = PhysicalTensor(y.l, w.l, units)
         for i in 1:y.l
             for j in 1:w.l
                 tensor[i,j] = y[i] * w[j]
@@ -649,36 +652,34 @@ function tensorProduct(y::PhysicalVector, z::PhysicalVector)::PhysicalTensor
     elseif (isSI(y) && isCGS(z))
         w = toCGS(y)
         units = w.u + z.u
-        tensor = newPhysicalTensor(w.l, z.l, units)
+        tensor = PhysicalTensor(w.l, z.l, units)
         for i in 1:w.l
             for j in 1:z.l
                 tensor[i,j] = w[i] * z[j]
             end
         end
     else
-        msg = "Vectors must have either CGS or SI units."
+        msg = "Vectors must be dimensionless or have CGS or SI units."
         throw(ErrorException(msg))
     end
     return tensor
 end
 
 function Base.:(transpose)(t::PhysicalTensor)::PhysicalTensor
-    matrix = transpose(t.m)
-    tensor = newPhysicalTensor(t.c, t.r, t.u)
-    for i in 1:tensor.r
-        for j in 1:tensor.c
-            tensor.m[i,j] = matrix[i,j]
+    units = t.u
+    array = zeros(Float64, t.c, t.r)
+    for i in 1:t.r
+        for j in 1:t.c
+            array[j,i] = t.m[i,j]
         end
     end
-    return tensor
+    return PhysicalTensor(t.c, t.r, array, units)
 end
 
 function LinearAlgebra.:(tr)(t::PhysicalTensor)::PhysicalScalar
     value = tr(t.m)
     units = t.u
-    ps = newPhysicalScalar(units)
-    set!(ps, value)
-    return ps
+    return PhysicalScalar(value, units)
 end
 
 function LinearAlgebra.:(det)(t::PhysicalTensor)::PhysicalScalar
@@ -689,22 +690,20 @@ function LinearAlgebra.:(det)(t::PhysicalTensor)::PhysicalScalar
         units = units + t.u
         i += 1
     end
-    ps = newPhysicalScalar(units)
-    set!(ps, value)
-    return ps
+    return PhysicalScalar(value, units)
 end
 
 function Base.:(inv)(t::PhysicalTensor)::PhysicalTensor
-    units = -t.u
     matrix = inv(t.m)
+    units  = -t.u
     (rows, cols) = size(matrix)
-    yInv = newPhysicalTensor(rows, cols, units)
+    tInv = PhysicalTensor(rows, cols, units)
     for i in 1:rows
         for j in 1:cols
-            yInv.m[i,j] = matrix[i,j]
+            tInv.m[i,j] = matrix[i,j]
         end
     end
-    return yInv
+    return tInv
 end
 
 function LinearAlgebra.:(qr)(t::PhysicalTensor)::Tuple
@@ -720,16 +719,12 @@ function LinearAlgebra.:(qr)(t::PhysicalTensor)::Tuple
         mag = sqrt(x^2 + y^2)
         e2 = [x/mag, y/mag]
         e2dotf2 = e2[1] * f2[1] + e2[2] * f2[2]
-        if isCGS(t)
-            q = newPhysicalTensor(2, 2, CGS_DIMENSIONLESS)
-        else
-            q = newPhysicalTensor(2, 2, SI_DIMENSIONLESS)
-        end
+        q = PhysicalTensor(2, 2, Dimensionless())
         for i in 1:2
             q.m[i,1] = e1[i]
             q.m[i,2] = e2[i]
         end
-        r = newPhysicalTensor(2, 2, t.u)
+        r = PhysicalTensor(2, 2, t.u)
         r.m[1,1] = e1dotf1
         r.m[1,2] = e1dotf2
         r.m[2,2] = e2dotf2
@@ -755,17 +750,13 @@ function LinearAlgebra.:(qr)(t::PhysicalTensor)::Tuple
         mag = sqrt(x^2 + y^2 + z^2)
         e3 = [x/mag, y/mag, z/mag]
         e3dotf3 = e3[1] * f3[1] + e3[2] * f3[2] + e3[3] * f3[3]
-        if isCGS(t)
-            q = newPhysicalTensor(3, 3, CGS_DIMENSIONLESS)
-        else
-            q = newPhysicalTensor(3, 3, SI_DIMENSIONLESS)
-        end
+        q = PhysicalTensor(3, 3, Dimensionless())
         for i in 1:3
             q.m[i,1] = e1[i]
             q.m[i,2] = e2[i]
             q.m[i,3] = e3[i]
         end
-        r = newPhysicalTensor(3, 3, t.u)
+        r = PhysicalTensor(3, 3, t.u)
         r.m[1,1] = e1dotf1
         r.m[1,2] = e1dotf2
         r.m[1,3] = e1dotf3
@@ -776,17 +767,13 @@ function LinearAlgebra.:(qr)(t::PhysicalTensor)::Tuple
         (Q, R) = qr(t.m)
         (rowsQ, colsQ) = size(Q)
         (rowsR, colsR) = size(R)
-        if isCGS(t)
-            q = newPhysicalTensor(rowsQ, colsQ, CGS_DIMENSIONLESS)
-        else
-            q = newPhysicalTensor(rowsQ, colsQ, SI_DIMENSIONLESS)
-        end
+        q = PhysicalTensor(rowsQ, colsQ, Dimensionless())
         for i in 1:rowsQ
             for j in 1:colsQ
                 q.m[i,j] = Q[i,j]
             end
         end
-        r = newPhysicalTensor(rowsR, colsR, t.u)
+        r = PhysicalTensor(rowsR, colsR, t.u)
         for i in 1:rowsR
             for j in 1:colsR
                 r.m[i,j] = R[i,j]

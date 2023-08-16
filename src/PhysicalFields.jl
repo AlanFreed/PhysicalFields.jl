@@ -17,8 +17,9 @@ import
     Printf: @sprintf
 
 using
+    JSON3,
     LinearAlgebra,
-    StaticArrays
+    StructTypes
 
 export
     # abstract types
@@ -38,37 +39,39 @@ export
     MReal,                   # <: MNumber, a mutable real/floating-point number.
     MComplex,                # <: MType,   a mutable complex number.
 
-    CGS,                     # <: PhysicalUnits,  Centimeter, Gram, Second units.
-    SI,                      # <: PhysicalUnits,  International System of units.
-    #   units included are:  length, mass, time, temperature
-    #   units absent are:    electric current, amount of substance, luminous intensity
+    Dimensionless,           # <: PhysicalUnits, an absence of physical units.
+    CGS,                     # <: PhysicalUnits, Centimeter, Gram, Second units.
+    SI,                      # <: PhysicalUnits, International System of units.
+    #   units included are:  length, mass, time and temperature
+    #   units absent are:    electric current, amount of substance, and
+    #                        luminous intensity
 
     PhysicalScalar,          # <: PhysicalField,  A number with units.
     PhysicalVector,          # <: PhysicalField,  A vector (array)  with units.
     PhysicalTensor,          # <: PhysicalField,  A tensor (matrix) with units.
     ArrayOfPhysicalScalars,  # Array of scalars with the same set of units.
-    ArrayIfPhysicalVectors,  # Array of vectors with the same length and units.
+    ArrayOfPhysicalVectors,  # Array of vectors with the same length and units.
     ArrayOfPhysicalTensors,  # Array of tensors with the same size and units.
 
-    # constructors
+    # functions
 
-    newPhysicalScalar,
-    newPhysicalVector,
-    newPhysicalTensor,
-    newArrayOfPhysicalScalars,
-    newArrayOfPhysicalVectors,
-    newArrayOfPhysicalTensors,
+    openJSONReader,
+    openJSONWriter,
+    closeJSONStream,
 
     # methods
 
     set!,
 
+    fromFile,
+    toFile,
+    toString,
+
     isCGS,
     isSI,
     isDimensionless,
-    isEquivalent,
+    areEquivalent,
 
-    toString,
     toCGS,
     toSI,
     toReal,

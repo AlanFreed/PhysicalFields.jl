@@ -1,26 +1,154 @@
 # PhysicalSystemsOfUnits
 
+# Exported types
+
 abstract type PhysicalUnits end
 
+struct Dimensionless <: PhysicalUnits
+    len::Int8   # exponent for the unit of length
+    mass::Int8  # exponent for the unit of mass
+    time::Int8  # exponent for the unit of time
+    temp::Int8  # exponent for the unit of temperature
+
+    # constructor
+
+    function Dimensionless()
+        new(convert(Int8, 0),
+            convert(Int8, 0),
+            convert(Int8, 0),
+            convert(Int8, 0))
+    end
+end
+
 struct CGS <: PhysicalUnits
-    cm::Int8   # centimeters
-    g::Int8    # grams
-    s::Int8    # seconds
-    C::Int8    # degrees centigrade
+    cm::Int8  # exponent for the unit of length:      centimeters
+    g::Int8   # exponent for the unit of mass:        grams
+    s::Int8   # exponent for the unit of time:        seconds
+    C::Int8   # exponent for the unit of temperature: degrees centigrade
+
+    # constructor
+
+    function CGS(cm::Integer, g::Integer, s::Integer, C::Integer)
+        new(convert(Int8, cm),
+            convert(Int8, g),
+            convert(Int8, s),
+            convert(Int8, C))
+    end
 end
 
 struct SI <: PhysicalUnits
-    m::Int8    # meters
-    kg::Int8   # kilograms
-    s::Int8    # seconds
-    K::Int8    # Kelvin
+    m::Int8   # exponent for the unit of length:      meters
+    kg::Int8  # exponent for the unit of mass:        kilograms
+    s::Int8   # exponent for the unit of time:        seconds
+    K::Int8   # exponent for the unit of temperature: Kelvin
+
+    # constructor
+
+    function SI(m::Integer, kg::Integer, s::Integer, K::Integer)
+        new(convert(Int8, m),
+            convert(Int8, kg),
+            convert(Int8, s),
+            convert(Int8, K))
+    end
 end
 
 #=
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+=#
+
+# A helper type for reading and writing from or to a JSON file.
+
+struct LowerUnits
+    system::String  # system of physical units
+    len::Int64      # exponent for the unit of length
+    mass::Int64     # exponent for the unit of mass
+    time::Int64     # exponent for the unit of time
+    temp::Int64     # exponent for the unit of temperature
+
+    # constructors
+
+    function LowerUnits(system::String, len::Integer, mass::Integer, time::Integer, temp::Integer)
+        len    = convert(Int64, len)
+        mass   = convert(Int64, mass)
+        time   = convert(Int64, time)
+        temp   = convert(Int64, temp)
+        new(system, len, mass, time, temp)
+    end
+
+    function LowerUnits(u::Dimensionless)
+        system = "Dimensionless"
+        len    = convert(Int64, 0)
+        mass   = convert(Int64, 0)
+        time   = convert(Int64, 0)
+        temp   = convert(Int64, 0)
+        new(system, len, mass, time, temp)
+    end
+
+    function LowerUnits(u::CGS)
+        system = "CGS"
+        len    = convert(Int64, u.cm)
+        mass   = convert(Int64, u.g)
+        time   = convert(Int64, u.s)
+        temp   = convert(Int64, u.C)
+        new(system, len, mass, time, temp)
+    end
+
+    function LowerUnits(u::SI)
+        system = "SI"
+        len    = convert(Int64, u.m)
+        mass   = convert(Int64, u.kg)
+        time   = convert(Int64, u.s)
+        temp   = convert(Int64, u.K)
+        new(system, len, mass, time, temp)
+    end
+end
+
+# Method required to serialize (write to file) instances of these types.
+
+function PhysicalUnits(lu::LowerUnits)::PhysicalUnits
+    if lu.system == "Dimensionless"
+        u = Dimensionless()
+    elseif lu.system == "CGS"
+        if (lu.len == 0) && (lu.mass == 0) && (lu.time == 0) && (lu.temp == 0)
+            u = Dimensionless()
+        else
+            u = CGS(lu.len, lu.mass, lu.time, lu.temp)
+        end
+    elseif lu.system == "SI"
+        if (lu.len == 0) && (lu.mass == 0) && (lu.time == 0) && (lu.temp == 0)
+            u = Dimensionless()
+        else
+            u = SI(lu.len, lu.mass, lu.time, lu.temp)
+        end
+    else
+        msg = "Unknown system of physical units."
+        throw(ErrorException(msg))
+    end
+    return u
+end
+
+#=
+-------------------------------------------------------------------------------
 =#
 
 # Type testing
+
+"""
+    isDimensionless(u::PhysicalUnits)::Bool
+
+Returns `true` if `u` is without physical dimension; otherwise, it returns `false`.
+"""
+function isDimensionless(u::PhysicalUnits)::Bool
+    if isa(u, Dimensionless)
+        return true
+    elseif isa(u, CGS) && (u.cm == 0) && (u.g == 0) && (u.s == 0) & (u.C == 0)
+        return true
+    elseif isa(u, SI) && (u.m == 0) && (u.kg == 0) & (u.s == 0) & (u.K == 0)
+        return true
+    else
+        return false
+    end
+end
 
 """
     isCGS(u::PhysicalUnits)::Bool
@@ -28,7 +156,11 @@ end
 Returns `true` if `u` has CGS units; otherwise, it returns `false`.
 """
 function isCGS(u::PhysicalUnits)::Bool
-    return isa(u, CGS)
+    if isDimensionless(u)
+        return true
+    else
+        return isa(u, CGS)
+    end
 end
 
 """
@@ -37,40 +169,28 @@ end
 Returns `true` if `u` has SI units; otherwise, it returns `false`.
 """
 function isSI(u::PhysicalUnits)::Bool
-    return isa(u, SI)
-end
-
-"""
-    isDimensionless(u::PhysicalUnits)::Bool
-
-Returns `true` if `u` is without physical dimension; otherwise, it returns `false`.
-"""
-function isDimensionless(u::PhysicalUnits)::Bool
-    if isa(u, CGS)
-        if (u.cm == 0) & (u.g == 0) && (u.s == 0) && (u.C == 0)
-            return true
-        else
-            return false
-        end
-    elseif isa(u, SI)
-        if (u.m == 0) && (u.kg == 0) && (u.s == 0) && (u.K == 0)
-            return true
-        else
-            return false
-        end
+    if isDimensionless(u)
+        return true
     else
-        msg = "Units must be either CGS or SI."
-        throw(ErrorException(msg))
+        return isa(u, SI)
     end
 end
 
 """
-    isEquivalent(u::PhysicalUnits, v::PhysicalUnits)::Bool
+    areEquivalent(u::PhysicalUnits, v::PhysicalUnits)::Bool
 
 Returns `true` if `u` and `v` are the same kind of unit; otherwise, returns `false`.
 """
-function isEquivalent(u::PhysicalUnits, v::PhysicalUnits)::Bool
-    if isa(u, CGS)
+function areEquivalent(u::PhysicalUnits, v::PhysicalUnits)::Bool
+    if isDimensionless(u) 
+        if isDimensionless(v)
+            return true
+        else
+            return false
+        end
+    elseif isDimensionless(v)
+        return false
+    elseif isa(u, CGS)
         if isa(v, CGS)
             if (u.cm == v.cm) && (u.g == v.g) && (u.s == v.s) && (u.C == v.C)
                 return true
@@ -84,7 +204,7 @@ function isEquivalent(u::PhysicalUnits, v::PhysicalUnits)::Bool
                 return false
             end
         else
-            msg = "Units must be either CGS or SI."
+            msg = "Units must be either Dimensionless, CGS or SI."
             throw(ErrorException(msg))
         end
     elseif isa(u, SI)
@@ -101,11 +221,11 @@ function isEquivalent(u::PhysicalUnits, v::PhysicalUnits)::Bool
                 return false
             end
         else
-            msg = "Units must be either CGS or SI."
+            msg = "Units must be either Dimensionless, CGS or SI."
             throw(ErrorException(msg))
         end
     else
-        msg = "Units must be either CGS or SI."
+        msg = "Units must be either Dimensionless, CGS or SI."
         throw(ErrorException(msg))
     end
 end
@@ -117,6 +237,42 @@ end
 # Overloaded these operators: logical: ==, ≠
 #                             unary:   +, -
 #                             binary:  +, -
+
+function Base.:(==)(y::Dimensionless, z::Dimensionless)::Bool
+    return true
+end
+
+function Base.:(==)(y::Dimensionless, z::CGS)::Bool
+    if (z.cm == 0) && (z.g == 0) && (z.s == 0) && (z.C == 0)
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:(==)(y::Dimensionless, z::SI)::Bool
+    if (z.m == 0) && (z.kg == 0) && (z.s == 0) && (z.K == 0)
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:(==)(y::CGS, z::Dimensionless)::Bool
+    if (y.cm == 0) && (y.g == 0) && (y.s == 0) && (y.C == 0)
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:(==)(y::SI, z::Dimensionless)::Bool
+    if (y.m == 0) && (y.kg == 0) && (y.s == 0) && (y.K == 0)
+        return true
+    else
+        return false
+    end
+end
 
 function Base.:(==)(y::CGS, z::CGS)::Bool
     if (y.cm == z.cm) && (y.g == z.g) && (y.s == z.s) && (y.C == z.C)
@@ -135,11 +291,39 @@ function Base.:(==)(y::SI, z::SI)::Bool
 end
 
 function Base.:(==)(y::CGS, z::SI)::Bool
-    return false
+    if isDimensionless(y) && isDimensionless(z)
+        return true
+    else
+        return false
+    end
 end
 
 function Base.:(==)(y::SI, z::CGS)::Bool
+    if isDimensionless(y) && isDimensionless(z)
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:≠(y::Dimensionless, z::Dimensionless)::Bool
     return false
+end
+
+function Base.:≠(y::Dimensionless, z::CGS)::Bool
+    return !(y == z)
+end
+
+function Base.:≠(y::Dimensionless, z::SI)::Bool
+    return !(y == z)
+end
+
+function Base.:≠(y::CGS, z::Dimensionless)::Bool
+    return !(y == z)
+end
+
+function Base.:≠(y::SI, z::Dimensionless)::Bool
+    return !(y == z)
 end
 
 function Base.:≠(y::CGS, z::CGS)::Bool
@@ -159,35 +343,63 @@ function Base.:≠(y::SI, z::SI)::Bool
 end
 
 function Base.:≠(y::CGS, z::SI)::Bool
-    return true
+    if isDimensionless(y) && isDimensionless(z)
+        return false
+    else
+        return true
+    end
 end
 
 function Base.:≠(y::SI, z::CGS)::Bool
-    return true
+    if isDimensionless(y) && isDimensionless(z)
+        return false
+    else
+        return true
+    end
 end
 
-function Base.:+(y::CGS)::CGS
+function Base.:+(y::Dimensionless)::Dimensionless
+    return Dimensionless()
+end
+
+function Base.:+(y::CGS)::PhysicalUnits
     cm = +y.cm
     g  = +y.g
     s  = +y.s
     C  = +y.C
-    return CGS(cm, g, s, C)
+    if (cm == 0) && (g == 0) && (s == 0) && (C == 0)
+        return Dimensionless()
+    else
+        return CGS(cm, g, s, C)
+    end
 end
 
-function Base.:+(y::SI)::SI
+function Base.:+(y::SI)::PhysicalUnits
     m  = +y.m
     kg = +y.kg
     s  = +y.s
     K  = +y.K
-    return SI(m, kg, s, K)
+    if (m == 0) && (kg == 0) && (s == 0) && (K == 0)
+        return Dimensionless()
+    else
+        return SI(m, kg, s, K)
+    end
 end
 
-function Base.:-(y::CGS)::CGS
+function Base.:-(y::Dimensionless)::Dimensionless
+    return Dimensionless()
+end
+
+function Base.:-(y::CGS)::PhysicalUnits
     cm = -y.cm
     g  = -y.g
     s  = -y.s
     C  = -y.C
-    return CGS(cm, g, s, C)
+    if (cm == 0) && (g == 0) && (s == 0) && (C == 0)
+        return Dimensionless()
+    else
+        return CGS(cm, g, s, C)
+    end
 end
 
 function Base.:-(y::SI)::SI
@@ -195,45 +407,143 @@ function Base.:-(y::SI)::SI
     kg = -y.kg
     s  = -y.s
     K  = -y.K
-    return SI(m, kg, s, K)
+    if (m == 0) && (kg == 0) && (s == 0) && (K == 0)
+        return Dimensionless()
+    else
+        return SI(m, kg, s, K)
+    end
 end
 
-function Base.:+(y::CGS, z::CGS)::CGS
+function Base.:+(y::Dimensionless, z::Dimensionless)::Dimensionless
+    return Dimensionless()
+end
+
+function Base.:+(y::Dimensionless, z::CGS)::PhysicalUnits
+    if isDimensionless(z)
+        return Dimensionless()
+    else
+        return CGS(z.cm, z.g, z.s, z.C)
+    end
+end
+
+function Base.:+(y::Dimensionless, z::SI)::PhysicalUnits
+    if isDimensionless(z)
+        return Dimensionless()
+    else
+        return SI(z.m, z.kg, z.s, z.K)
+    end
+end
+
+function Base.:+(y::CGS, z::Dimensionless)::PhysicalUnits
+    if isDimensionless(y)
+        return Dimensionless()
+    else
+        return CGS(y.cm, y.g, y.s, y.C)
+    end
+end
+
+function Base.:+(y::SI, z::Dimensionless)::PhysicalUnits
+    if isDimensionless(y)
+        return Dimensionless()
+    else
+        return SI(y.m, y.kg, y.s, y.K)
+    end
+end
+
+function Base.:+(y::CGS, z::CGS)::PhysicalUnits
     cm = y.cm + z.cm
     g  = y.g + z.g
     s  = y.s + z.s
     C  = y.C + z.C
-    return CGS(cm, g, s, C)
+    if (cm == 0) && (g == 0) && (s == 0) && (C == 0)
+        return Dimensionless()
+    else
+        return CGS(cm, g, s, C)
+    end
 end
 
-function Base.:+(y::SI, z::SI)::SI
+function Base.:+(y::SI, z::SI)::PhysicalUnits
     m  = y.m + z.m
     kg = y.kg + z.kg
     s  = y.s + z.s
     K  = y.K + z.K
-    return SI(m, kg, s, K)
+    if (m == 0) && (kg == 0) && (s == 0) && (K == 0)
+        return Dimensionless()
+    else
+        return SI(m, kg, s, K)
+    end
 end
 
-function Base.:-(y::CGS, z::CGS)::CGS
+function Base.:-(y::Dimensionless, z::Dimensionless)::Dimensionless
+    return Dimensionless()
+end
+
+function Base.:-(y::Dimensionless, z::CGS)::PhysicalUnits
+    if isDimensionless(z)
+        return Dimensionless()
+    else
+        return CGS(-z.cm, -z.g, -z.s, -z.C)
+    end
+end
+
+function Base.:-(y::Dimensionless, z::SI)::PhysicalUnits
+    if isDimensionless(z)
+        return Dimensionless()
+    else
+        return SI(-z.m, -z.kg, -z.s, -z.K)
+    end
+end
+
+function Base.:-(y::CGS, z::Dimensionless)::PhysicalUnits
+    if isDimensionless(y)
+        return Dimensionless()
+    else
+        return CGS(y.cm, y.g, y.s, y.C)
+    end
+end
+
+function Base.:-(y::SI, z::Dimensionless)::PhysicalUnits
+    if isDimensionless(y)
+        return Dimensionless()
+    else
+        return SI(y.m, y.kg, y.s, y.K)
+    end
+end
+
+function Base.:-(y::CGS, z::CGS)::PhysicalUnits
     cm = y.cm - z.cm
     g  = y.g - z.g
     s  = y.s - z.s
     C  = y.C - z.C
-    return CGS(cm, g, s, C)
+    if (cm == 0) && (g == 0) && (s == 0) && (C == 0)
+        return Dimensionless()
+    else
+        return CGS(cm, g, s, C)
+    end
 end
 
-function Base.:-(y::SI, z::SI)::SI
+function Base.:-(y::SI, z::SI)::PhysicalUnits
     m  = y.m - z.m
     kg = y.kg - z.kg
     s  = y.s - z.s
     K  = y.K - z.K
-    return SI(m, kg, s, K)
+    if (m == 0) && (kg == 0) && (s == 0) && (K == 0)
+        return Dimensionless()
+    else
+        return SI(m, kg, s, K)
+    end
 end
+
 #=
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 =#
 
 # Methods extending their base methods.
+
+function Base.:(copy)(u::Dimensionless)::Dimensionless
+    c = u
+    return c
+end
 
 function Base.:(copy)(u::CGS)::CGS
     c = u
@@ -243,6 +553,10 @@ end
 function Base.:(copy)(u::SI)::SI
     c = u
     return c
+end
+
+function Base.:(deepcopy)(u::Dimensionless)::Dimensionless
+    return Dimensionless()
 end
 
 function Base.:(deepcopy)(u::CGS)::CGS
@@ -259,6 +573,10 @@ end
 =#
 
 # Methods that convert a system of units into a string.
+
+function toString(u::Dimensionless)::String
+    return ""
+end
 
 function toString(u::CGS)::String
     if u.g > 1
@@ -767,6 +1085,39 @@ function toString(u::SI)::String
     s = string(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10)
     return s
 end
+
+#=
+--------------------------------------------------------------------------------
+=#
+
+# Reading and writing physical units from/to a JSON file.
+
+StructTypes.StructType(::Type{LowerUnits}) = StructTypes.Struct()
+
+function toFile(y::PhysicalUnits, json_stream::IOStream)
+    if isopen(json_stream)
+        lu = LowerUnits(y)
+        JSON3.write(json_stream, lu)
+        write(json_stream, '\n')
+    else
+        msg = "The supplied JSON stream is not open."
+        throw(ErrorException(msg))
+    end
+    flush(json_stream)
+    return nothing
+end
+
+function fromFile(::Type{PhysicalUnits}, json_stream::IOStream)::PhysicalUnits
+    if isopen(json_stream)
+        lu = JSON3.read(readline(json_stream), LowerUnits)
+        pu = PhysicalUnits(lu)
+    else
+        msg = "The supplied JSON stream is not open."
+        throw(ErrorException(msg))
+    end
+    return pu
+end
+
 #=
 --------------------------------------------------------------------------------
 =#
@@ -854,3 +1205,5 @@ const SI_TEMPERATURE_RATE = SI(0, 0, -1, 1)
 const SI_TIME             = SI(0, 0, 1, 0)
 const SI_VELOCITY         = SI(1, 0, -1, 0)
 const SI_VOLUME           = SI(3, 0, 0, 0)
+
+# end PhysicalSystemsOfUnits
