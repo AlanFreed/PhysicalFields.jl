@@ -31,6 +31,21 @@ export
 
     PhysicalField,           # An abstract type for physical fields.
 
+    # Lower-level types needed to serialize the exported concrete types below.
+
+    LowerRational,
+    LowerComplex,
+    LowerUnits,
+    LowerVector,
+    LowerMatrix,
+    LowerArray,
+    LowerPhySca,
+    LowerPhyVec,
+    LowerPhyTen,
+    LowerArrPhySca,
+    LowerArrPhyVec,
+    LowerArrPhyTen,
+
     # concrete types
 
     MBool,                   # <: MType,   a mutable boolean.
