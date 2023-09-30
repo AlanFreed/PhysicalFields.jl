@@ -3,79 +3,37 @@
 # Methods for testing the kind of system of units.
 
 function isDimensionless(s::PhysicalScalar)::Bool
-    return isDimensionless(s.u)
+    return isDimensionless(s.units)
 end
 
 function isDimensionless(as::ArrayOfPhysicalScalars)::Bool
-    return isDimensionless(as.u)
+    return isDimensionless(as.units)
 end
 
 function isCGS(s::PhysicalScalar)::Bool
-    return isCGS(s.u)
+    return isCGS(s.units)
 end
 
 function isCGS(as::ArrayOfPhysicalScalars)::Bool
-    return isCGS(as.u)
+    return isCGS(as.units)
 end
 
 function isSI(s::PhysicalScalar)::Bool
-    return isSI(s.u)
+    return isSI(s.units)
 end
 
 function isSI(as::ArrayOfPhysicalScalars)::Bool
-    return isSI(as.u)
+    return isSI(as.units)
 end
 
 # Methods for converting between systems of units.
-
-function toCGS(s::PhysicalScalar)::PhysicalScalar
-    if isDimensionless(s) || isCGS(s)
-        return s
-    elseif isSI(s)
-        units = CGS(s.u.m, s.u.kg, s.u.s, s.u.K)
-        if s.u == KELVIN
-            value = s.x - 273.15
-        else
-            value = s.x * 100.0^s.u.m * 1000.0^s.u.kg
-        end
-        return PhysicalScalar(value, units)
-    else
-        msg = "Scalars must be dimensionless or have either CGS or SI units."
-        throw(ErrorException(msg))
-    end
-end
-
-function toCGS(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
-    if isDimensionless(as) || isCGS(as)
-        return as
-    elseif isSI(as)
-        units = CGS(as.u.m, as.u.kg, as.u.s, as.u.K)
-        pa = ArrayOfPhysicalScalars(as.e, units)
-        for i in 1:as.e
-            if as.u == KELVIN
-                value = as.a[i] - 273.15
-            else
-                value = as.a[i] * 100.0^as.u.m * 1000.0^as.u.kg
-            end
-            pa[i] = PhysicalScalar(value, units)
-        end
-        return pa
-    else
-        msg = "Scalars must be dimensionless or have either CGS or SI units."
-        throw(ErrorException(msg))
-    end
-end
 
 function toSI(s::PhysicalScalar)::PhysicalScalar
     if isDimensionless(s) || isSI(s)
         return s
     elseif isCGS(s)
-        units = SI(s.u.cm, s.u.g, s.u.s, s.u.C)
-        if s.u == CENTIGRADE
-            value = s.x + 273.15
-        else
-            value = s.x * 100.0^(-s.u.cm) * 1000.0^(-s.u.g)
-        end
+        units = PhysicalUnits("SI", s.units.length, s.units.mass, s.units.amount_of_substance, s.units.time, s.units.temperature, s.units.electric_current, s.units.light_intensity)
+        value = s.value * 100.0^(-s.units.length) * 1000.0^(-s.units.mass)
         return PhysicalScalar(value, units)
     else
         msg = "Scalars must be dimensionless or have either CGS or SI units."
@@ -87,25 +45,51 @@ function toSI(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
     if isDimensionless(as) || isSI(as)
         return as
     elseif isCGS(as)
-        units = SI(as.u.cm, as.u.g, as.u.s, as.u.C)
-        pa = ArrayOfPhysicalScalars(as.e, units)
-        for i in 1:as.e
-            if as.u == CENTIGRADE
-                value = as.a[i] + 273.15
-            else
-                value = as.a[i] * 100.0^(-as.u.cm) * 1000.0^(-as.u.g)
-            end
+        units = PhysicalUnits("SI", as.units.length, as.units.mass, as.units.amount_of_substance, as.units.time, as.units.temperature, as.units.electric_current, as.units.light_intensity)
+        pa = ArrayOfPhysicalScalars(as.vector.len, units)
+        for i in 1:as.vector.len
+            value = as.array[i] * 100.0^(-as.units.length) * 1000.0^(-as.units.mass)
             pa[i] = PhysicalScalar(value, units)
         end
         return pa
+    else
+        msg = "Scalar arrays must be dimensionless or have either CGS or SI units."
+        throw(ErrorException(msg))
+    end
+end
+
+function toCGS(s::PhysicalScalar)::PhysicalScalar
+    if isDimensionless(s) || isCGS(s)
+        return s
+    elseif isSI(s)
+        units = PhysicalUnits("CGS", s.units.length, s.units.mass, s.units.amount_of_substance, s.units.time, s.units.temperature, s.units.electric_current, s.units.light_intensity)
+        value = s.value * 100.0^s.units.length * 1000.0^s.units.mass
+        return PhysicalScalar(value, units)
     else
         msg = "Scalars must be dimensionless or have either CGS or SI units."
         throw(ErrorException(msg))
     end
 end
 
+function toCGS(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
+    if isDimensionless(as) || isCGS(as)
+        return as
+    elseif isSI(as)
+        units = PhysicalUnits("CGS", as.units.length, as.units.mass, as.units.amount_of_substance, as.units.time, as.units.temperature, as.units.electric_current, as.units.light_intensity)
+        pa = ArrayOfPhysicalScalars(as.vector.len, units)
+        for i in 1:as.array.len
+            value = as.array[i] * 100.0^as.units.length * 1000.0^as.units.mass
+            pa[i] = PhysicalScalar(value, units)
+        end
+        return pa
+    else
+        msg = "Scalar arrays must be dimensionless or have either CGS or SI units."
+        throw(ErrorException(msg))
+    end
+end
+
 function toReal(s::PhysicalScalar)::Real
-    return toReal(s.x)
+    return Real(s.value)
 end
 
 #=
@@ -113,29 +97,27 @@ end
 =#
 
 function Base.:(copy)(s::PhysicalScalar)::PhysicalScalar
-    value = copy(s.x)
-    units = copy(s.u)
+    value = copy(s.value)
+    units = copy(s.units)
     return PhysicalScalar(value, units)
 end
 
 function Base.:(copy)(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
-    arr_len = copy(as.e)
-    array   = copy(as.a)
-    units   = copy(as.u)
-    return ArrayOfPhysicalScalars(arr_len, array, units)
+    array = copy(as.array)
+    units = copy(as.units)
+    return ArrayOfPhysicalScalars(array, units)
 end
 
 function Base.:(deepcopy)(s::PhysicalScalar)::PhysicalScalar
-    value = deepcopy(s.x)
-    units = deepcopy(s.u)
+    value = deepcopy(s.value)
+    units = deepcopy(s.units)
     return PhysicalScalar(value, units)
 end
 
 function Base.:(deepcopy)(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
-    arr_len = deepcopy(as.e)
-    array   = deepcopy(as.a)
-    units   = deepcopy(as.u)
-    return ArrayOfPhysicalScalars(arr_len, array, units)
+    array = deepcopy(as.array)
+    units = deepcopy(as.units)
+    return ArrayOfPhysicalScalars(array, units)
 end
 
 #=
@@ -147,24 +129,24 @@ end
 #                             binary:  +, -, *, /
 
 function Base.:(==)(y::PhysicalScalar, z::PhysicalScalar)::Bool
-    if areEquivalent(y.u, z.u)
+    if areEquivalent(y.units, z.units)
         if ((isDimensionless(y) && isDimensionless(z)) ||
             (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
-            if y.x == z.x
+            if y.value == z.value
                 return true
             else
                 return false
             end
         elseif isCGS(y) && isSI(z)
-            w = toCGS(z)
-            if y.x == w.x
+            w = toSI(y)
+            if w.value == z.value
                 return true
             else
                 return false
             end
         elseif isSI(y) && isCGS(z)
-            w = toCGS(y)
-            if w.x == z.x
+            w = toSI(z)
+            if y.value == w.value
                 return true
             else
                 return false
@@ -180,7 +162,7 @@ end
 
 function Base.:(==)(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
     if isDimensionless(z)
-        if y == z.x
+        if y == z.value
             return true
         else
             return false
@@ -193,7 +175,7 @@ end
 
 function Base.:(==)(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
     if isDimensionless(y)
-        if y.x == z
+        if y.value == z
             return true
         else
             return false
@@ -205,24 +187,24 @@ function Base.:(==)(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
 end
 
 function Base.:≈(y::PhysicalScalar, z::PhysicalScalar)::Bool
-    if areEquivalent(y.u, z.u)
+    if areEquivalent(y.units, z.units)
         if ((isDimensionless(y) && isDimensionless(z)) ||
             (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
-            if y.x ≈ z.x
+            if y.value ≈ z.value
                 return true
             else
                 return false
             end
         elseif isCGS(y) && isSI(z)
-            w = toCGS(z)
-            if y.x ≈ w.x
+            w = toSI(y)
+            if w.value ≈ z.value
                 return true
             else
                 return false
             end
         elseif isSI(y) && isCGS(z)
-            w = toCGS(y)
-            if w.x ≈ z.x
+            w = toSI(z)
+            if y.value ≈ w.value
                 return true
             else
                 return false
@@ -238,7 +220,7 @@ end
 
 function Base.:≈(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
     if isDimensionless(z)
-        if y ≈ z.x
+        if y ≈ z.value
             return true
         else
             return false
@@ -251,7 +233,7 @@ end
 
 function Base.:≈(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
     if isDimensionless(y)
-        if y.x ≈ z
+        if y.value ≈ z
             return true
         else
             return false
@@ -278,24 +260,24 @@ function Base.:≠(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
 end
 
 function Base.:<(y::PhysicalScalar, z::PhysicalScalar)::Bool
-    if areEquivalent(y.u, z.u)
+    if areEquivalent(y.units, z.units)
         if ((isDimensionless(y) && isDimensionless(z)) ||
             (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
-            if y.x < z.x
+            if y.value < z.value
                 return true
             else
                 return false
             end
         elseif isCGS(y) && isSI(z)
-            w = toCGS(z)
-            if y.x < w.x
+            w = toSI(y)
+            if w.value < z.value
                 return true
             else
                 return false
             end
         elseif isSI(y) && isCGS(z)
-            w = toCGS(y)
-            if w.x < z.x
+            w = toSI(z)
+            if y.value < w.value
                 return true
             else
                 return false
@@ -312,7 +294,7 @@ end
 
 function Base.:<(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
     if isDimensionless(z)
-        if y < z.x
+        if y < z.value
             return true
         else
             return false
@@ -325,7 +307,7 @@ end
 
 function Base.:<(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
     if isDimensionless(y)
-        if y.x < z
+        if y.value < z
             return true
         else
             return false
@@ -352,24 +334,24 @@ function Base.:≥(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
 end
 
 function Base.:>(y::PhysicalScalar, z::PhysicalScalar)::Bool
-    if areEquivalent(y.u, z.u)
+    if areEquivalent(y.units, z.units)
         if ((isDimensionless(y) && isDimensionless(z)) ||
             (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
-            if y.x > z.x
+            if y.value > z.value
                 return true
             else
                 return false
             end
         elseif isCGS(y) && isSI(z)
-            w = toCGS(z)
-            if y.x > w.x
+            w = toSI(y)
+            if w.value > z.value
                 return true
             else
                 return false
             end
         elseif isSI(y) && isCGS(z)
-            w = toCGS(y)
-            if w.x > z.x
+            w = toSI(z)
+            if y.value > z.value
                 return true
             else
                 return false
@@ -386,7 +368,7 @@ end
 
 function Base.:>(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
     if isDimensionless(z)
-        if y > z.x
+        if y > z.value
             return true
         else
             return false
@@ -399,7 +381,7 @@ end
 
 function Base.:>(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
     if isDimensionless(y)
-        if y.x > z
+        if y.value > z
             return true
         else
             return false
@@ -426,31 +408,29 @@ function Base.:≤(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
 end
 
 function Base.:+(y::PhysicalScalar)::PhysicalScalar
-    value = +y.x
-    units = y.u
-    return PhysicalScalar(value, units)
+    return copy(y)
 end
 
 function Base.:-(y::PhysicalScalar)::PhysicalScalar
-    value = -y.x
-    units = y.u
+    value = -y.value
+    units = y.units
     return PhysicalScalar(value, units)
 end
 
 function Base.:+(y::PhysicalScalar, z::PhysicalScalar)::PhysicalScalar
-    if areEquivalent(y.u, z.u)
+    if areEquivalent(y.units, z.units)
         if ((isDimensionless(y) && isDimensionless(z)) ||
             (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
-            units = y.u
-            value = y.x + z.x
+            units = y.units
+            value = y.value + z.value
         elseif isCGS(y) && isSI(z)
-            w = toCGS(z)
-            units = y.u
-            value = y.x + w.x
+            w = toSI(y)
+            units = z.units
+            value = w.value + z.value
         elseif isSI(y) && isCGS(z)
-            w = toCGS(y)
-            units = z.u
-            value = w.x + z.x
+            w = toSI(z)
+            units = y.units
+            value = y.value + w.value
         else
             msg = "Scalar addition requires units to be dimensionless, CGS or SI."
             throw(ErrorException(msg))
@@ -464,8 +444,8 @@ end
 
 function Base.:+(y::Union{Real, MNumber}, z::PhysicalScalar)::PhysicalScalar
     if isDimensionless(z)
-        units = Dimensionless()
-        value = y + z.x
+        units = z.units
+        value = y + z.value
     else
         msg = "Adding a number with a scalar requires the scalar to be dimensionless."
         throw(ErrorException(msg))
@@ -475,8 +455,8 @@ end
 
 function Base.:+(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
     if isDimensionless(y)
-        units = Dimensionless()
-        value = y.x + z
+        units = y.units
+        value = y.value + z
     else
         msg = "Adding a scalar with a number requires the scalar to be dimensionless."
         throw(ErrorException(msg))
@@ -485,19 +465,19 @@ function Base.:+(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
 end
 
 function Base.:-(y::PhysicalScalar, z::PhysicalScalar)::PhysicalScalar
-    if areEquivalent(y.u, z.u)
+    if areEquivalent(y.units, z.units)
         if ((isDimensionless(y) && isDimensionless(z)) ||
             (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z)))
-            units = y.u
-            value = y.x - z.x
+            units = y.units
+            value = y.value - z.value
         elseif isCGS(y) && isSI(z)
-            w = toCGS(z)
-            units = y.u
-            value = y.x - w.x
+            w = toSI(y)
+            units = z.units
+            value = w.value - z.value
         elseif isSI(y) && isCGS(z)
-            w = toCGS(y)
-            units = z.u
-            value = w.x - z.x
+            w = toSI(z)
+            units = y.units
+            value = y.value - w.value
         else
             msg = "Scalar subtraction requires units to be dimensionless, CGS or SI."
             throw(ErrorException(msg))
@@ -511,8 +491,8 @@ end
 
 function Base.:-(y::Union{Real, MNumber}, z::PhysicalScalar)::PhysicalScalar
     if isDimensionless(z)
-        units = Dimensionless()
-        value = y - z.x
+        units = z.units
+        value = y - z.value
     else
         msg = "Subtracting a number by a scalar requires the scalar to be dimensionless."
         throw(ErrorException(msg))
@@ -522,8 +502,8 @@ end
 
 function Base.:-(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
     if isDimensionless(y)
-        units = Dimensionless()
-        value = y.x - z
+        units = y.units
+        value = y.value - z
     else
         msg = "Subtracting a scalar by a number requires the scalar to be dimensionless."
         throw(ErrorException(msg))
@@ -533,16 +513,16 @@ end
 
 function Base.:*(y::PhysicalScalar, z::PhysicalScalar)::PhysicalScalar
     if (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z))
-        value = y.x * z.x
-        units = y.u + z.u
+        value = y.value * z.value
+        units = y.units + z.units
     elseif isCGS(y) && isSI(z)
-        w = toCGS(z)
-        value = y.x * w.x
-        units = y.u + w.u
+        w = toSI(y)
+        value = w.value * z.value
+        units = w.units + z.units
     elseif isSI(y) && isCGS(z)
-        w = toCGS(y)
-        value = w.x * z.x
-        units = w.u + z.u
+        w = toSI(z)
+        value = y.value * w.value
+        units = y.units + w.units
     else
         msg = "Scalar multiplication requires scalars have CGS or SI units."
         throw(ErrorException(msg))
@@ -551,29 +531,29 @@ function Base.:*(y::PhysicalScalar, z::PhysicalScalar)::PhysicalScalar
 end
 
 function Base.:*(y::Union{Real, MNumber}, z::PhysicalScalar)::PhysicalScalar
-    value = y * z.x
-    units = z.u
+    value = y * z.value
+    units = z.units
     return PhysicalScalar(value, units)
 end
 
 function Base.:*(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
-    value = y.x * z
-    units = y.u
+    value = y.value * z
+    units = y.units
     return PhysicalScalar(value, units)
 end
 
 function Base.:/(y::PhysicalScalar, z::PhysicalScalar)::PhysicalScalar
     if (isCGS(y) && isCGS(z)) || (isSI(y) && isSI(z))
-        value = y.x / z.x
-        units = y.u - z.u
+        value = y.value / z.value
+        units = y.units - z.units
     elseif isCGS(y) && isSI(z)
-        w = toCGS(z)
-        value = y.x / w.x
-        units = y.u - w.u
+        w = toSI(y)
+        value = w.value / z.value
+        units = w.units - z.units
     elseif isSI(y) && isCGS(z)
-        w = toCGS(y)
-        value = w.x / z.x
-        units = w.u - z.u
+        w = toCGS(z)
+        value = y.value / w.value
+        units = y.units - w.units
     else
         msg = "Scalar division requires scalars have CGS or SI units."
         throw(ErrorException(msg))
@@ -582,55 +562,33 @@ function Base.:/(y::PhysicalScalar, z::PhysicalScalar)::PhysicalScalar
 end
 
 function Base.:/(y::Union{Real, MNumber}, z::PhysicalScalar)::PhysicalScalar
-    value = y / z.x
-    units = -z.u
+    value = y / z.value
+    units = -z.units
     return PhysicalScalar(value, units)
 end
 
 function Base.:/(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
-    value = y.x / z
-    units = y.u
+    value = y.value / z
+    units = y.units
     return PhysicalScalar(value, units)
 end
 
 function Base.:^(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
     if (typeof(z) == Integer) || (typeof(z) == MInteger)
-        value = y.x ^ z
-        if isCGS(y)
-            units = CGS(Int8(y.u.cm*z), Int8(y.u.g*z), Int8(y.u.s*z), Int8(y.u.C*z))
+        value = y.value ^ z
+        if isDimensionless(y)
+            units = y.units
+        elseif isCGS(y)
+            units = PhysicalUnits("CGS", y.units.length*z, y.units.mass*z, y.units.amount_of_substance*z, y.units.time*z, y.units.temperature*z, y.units.electric_current*z, y.units.light_intensity*z)
         elseif isSI(y)
-            units = SI(Int8(y.u.m*z), Int8(y.u.kg*z), Int8(y.u.s*z), Int8(y.u.K*z))
+            units = PhysicalUnits("SI", y.units.length*z, y.units.mass*z, y.units.amount_of_substance*z, y.units.time*z, y.units.temperature*z, y.units.electric_current*z, y.units.light_intensity*z)
         else
             msg = "Scalars raised to integer powers require the scalar to have CGS or SI units."
             throw(ErrorException(msg))
         end
-    elseif (typeof(z) == Rational) || (typeof(z) == MRational)
-        n = numerator(z)
-        d = denominator(z)
-        value = y.x ^ (n / d)
-        if isCGS(y)
-            if ((y.u.cm * n % d == 0) && (y.u.g * n % d == 0) &&
-                (y.u.s * n % d == 0) && (y.u.C * n % d == 0))
-                units = CGS(Int8(y.u.cm*n÷d), Int8(y.u.g*n÷d), Int8(y.u.s*n÷d), Int8(y.u.C*n÷d))
-            else
-                msg == "Scalars raised to rational powers must produce units with integer powers."
-                throw(ErrorException(msg))
-            end
-        elseif isSI(y)
-            if ((y.u.m * n % d == 0) && (y.u.kg * n % d == 0) &&
-                (y.u.s * n % d == 0) && (y.u.K * n % d == 0))
-                units = SI(Int8(y.u.m*n÷d), Int8(y.u.kg*n÷d), Int8(y.u.s*n÷d), Int8(y.u.K*n÷d))
-            else
-                msg == "Scalars raised to rational powers must produce units with integer powers."
-                throw(ErrorException(msg))
-            end
-        else
-            msg = "Scalars raised to rational powers require the scalar to have CGS or SI units."
-            throw(ErrorException(msg))
-        end
     elseif isDimensionless(y)
-        value = y.x ^ z
-        units = y.u
+        value = y.value ^ z
+        units = y.units
     else
         msg = "Scalars raised to real powers require the scalar to be dimensionless."
         throw(ErrorException(msg))
@@ -645,61 +603,73 @@ end
 # Math functions
 
 function Base.:(abs)(s::PhysicalScalar)::PhysicalScalar
-    value = abs(s.x)
-    units = s.u
+    value = abs(s.value)
+    units = s.units
     return PhysicalScalar(value, units)
 end
 
 function Base.:(round)(y::PhysicalScalar)::PhysicalScalar
-    value = round(y.x)
-    units = y.u
+    value = round(y.value)
+    units = y.units
     return PhysicalScalar(value, units)
 end
 
 function Base.:(ceil)(y::PhysicalScalar)::PhysicalScalar
-    value = ceil(y.x)
-    units = y.u
+    value = ceil(y.value)
+    units = y.units
     return PhysicalScalar(value, units)
 end
 
 function Base.:(floor)(y::PhysicalScalar)::PhysicalScalar
-    value = floor(y.x)
-    units = y.u
+    value = floor(y.value)
+    units = y.units
     return PhysicalScalar(value, units)
 end
 
 function Base.:(sqrt)(y::PhysicalScalar)::PhysicalScalar
     if isDimensionless(y)
         units = Dimensionless()
-    elseif isCGS(y)
-        if ((y.u.cm%2 == 0) && (y.u.g%2 == 0) && (y.u.s%2 == 0) && (y.u.C%2 == 0))
-            units = CGS(y.u.cm÷2, y.u.g÷2, y.u.s÷2, y.u.C÷2)
-        else
-            msg = "The CGS dimensions of y do not permit taking its square root."
-            throw(ErrorException(msg))
-        end
     elseif isSI(y)
-        if ((y.u.m%2 == 0) && (y.u.kg%2 == 0) && (y.u.s%2 == 0) && (y.u.K%2 == 0))
-            units = SI(y.u.m÷2, y.u.kg÷2, y.u.s÷2, y.u.K÷2)
+        if ((y.units.length%2 == 0) &&
+            (y.units.mass%2 == 0) &&
+            (y.units.amount_of_substance%2 == 0) &&
+            (y.units.time%2 == 0) &&
+            (y.units.temperature%2 == 0) &&
+            (y.units.electric_current%2 == 0) &&
+            (y.units.light_intensity%2 == 0))
+            units = PhysicalUnits("SI", y.units.length÷2, y.units.mass÷2, y.units.amount_of_substance÷2, y.units.time÷2, y.units.temperature÷2, y.units.electric_current÷2, y.units.light_intensity÷2)
         else
             msg = "The SI dimensions of y do not permit taking its square root."
+            throw(ErrorException(msg))
+        end
+    elseif isCGS(y)
+        if ((y.units.length%2 == 0) &&
+            (y.units.mass%2 == 0) &&
+            (y.units.amount_of_substance%2 == 0) &&
+            (y.units.time%2 == 0) &&
+            (y.units.temperature%2 == 0) &&
+            (y.units.electric_current%2 == 0) &&
+            (y.units.light_intensity%2 == 0))
+            units = PhysicalUnits("CGS", y.units.length÷2, y.units.mass÷2, y.units.amount_of_substance÷2, y.units.time÷2, y.units.temperature÷2, y.units.electric_current÷2, y.units.light_intensity÷2)
+        else
+            msg = "The CGS dimensions of y do not permit taking its square root."
             throw(ErrorException(msg))
         end
     else
         msg = "Function sqrt() requires its argument to be dimensionless, CGS or SI."
         throw(ErrorException(msg))
     end
-    value = sqrt(y.x)
+    value = sqrt(y.value)
     return PhysicalScalar(value, units)
 end
 
 function Base.:(sign)(y::PhysicalScalar)::Real
-    return sign(y.x)
+    return sign(y.value)
 end
 
 function Base.:(sin)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = sin(y.x)
+        n = sin(y.value)
     else
         msg = "The argument must be dimensionless when calling sin()."
         throw(ErrorException(msg))
@@ -709,7 +679,7 @@ end
 
 function Base.:(cos)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = cos(y.x)
+        n = cos(y.value)
     else
         msg = "The argument must be dimensionless when calling cos()."
         throw(ErrorException(msg))
@@ -719,7 +689,7 @@ end
 
 function Base.:(tan)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = tan(y.x)
+        n = tan(y.value)
     else
         msg = "The argument must be dimensionless when calling tan()."
         throw(ErrorException(msg))
@@ -729,7 +699,7 @@ end
 
 function Base.:(sinh)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = sinh(y.x)
+        n = sinh(y.value)
     else
         msg = "The argument must be dimensionless when calling sinh()."
         throw(ErrorException(msg))
@@ -739,7 +709,7 @@ end
 
 function Base.:(cosh)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = cosh(y.x)
+        n = cosh(y.value)
     else
         msg = "The argument must be dimensionless when calling cosh()."
         throw(ErrorException(msg))
@@ -749,7 +719,7 @@ end
 
 function Base.:(tanh)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = tanh(y.x)
+        n = tanh(y.value)
     else
         msg = "The argument must be dimensionless when calling tanh()."
         throw(ErrorException(msg))
@@ -759,7 +729,7 @@ end
 
 function Base.:(asin)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = asin(y.x)
+        n = asin(y.value)
     else
         msg = "The argument must be dimensionless when calling asin()."
         throw(ErrorException(msg))
@@ -769,7 +739,7 @@ end
 
 function Base.:(acos)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = acos(y.x)
+        n = acos(y.value)
     else
         msg = "The argument must be dimensionless when calling acos()."
         throw(ErrorException(msg))
@@ -779,7 +749,7 @@ end
 
 function Base.:(atan)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = atan(y.x)
+        n = atan(y.value)
     else
         msg = "The argument must be dimensionless when calling atan()."
         throw(ErrorException(msg))
@@ -788,10 +758,10 @@ function Base.:(atan)(y::PhysicalScalar)::Real
 end
 
 function Base.:(atan)(y::PhysicalScalar, x::PhysicalScalar)::Real
-    if y.u == x.u
-        n = atan(y.x, x.x)
+    if y.units == x.units
+        n = atan(y.value, x.value)
     else
-        msg = "The arguments must have the same type when calling atan(y, x)."
+        msg = "The arguments must have the same units when calling atan(y, x)."
         throw(ErrorException(msg))
     end
     return n
@@ -799,7 +769,7 @@ end
 
 function Base.:(atan)(y::PhysicalScalar, x::Union{Real, MNumber})::Real
     if isDimensionless(y)
-        n = atan(y.x, x)
+        n = atan(y.value, x)
     else
         msg = "The scalar argument must dimensionless when calling atan(y, x)."
         throw(ErrorException(msg))
@@ -808,8 +778,8 @@ function Base.:(atan)(y::PhysicalScalar, x::Union{Real, MNumber})::Real
 end
 
 function Base.:(atan)(y::Union{Real, MNumber}, x::PhysicalScalar)::Real
-    if isDimensionless(y)
-        n = atan(y, x.x)
+    if isDimensionless(x)
+        n = atan(y, x.value)
     else
         msg = "The scalar argument must dimensionless when calling atan(y, x)."
         throw(ErrorException(msg))
@@ -819,7 +789,7 @@ end
 
 function Base.:(asinh)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = asinh(y.x)
+        n = asinh(y.value)
     else
         msg = "The argument must be dimensionless when calling asinh()."
         throw(ErrorException(msg))
@@ -829,7 +799,7 @@ end
 
 function Base.:(acosh)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = acosh(y.x)
+        n = acosh(y.value)
     else
         msg = "The argument must be dimensionless when calling acosh()."
         throw(ErrorException(msg))
@@ -839,7 +809,7 @@ end
 
 function Base.:(atanh)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = atanh(y.x)
+        n = atanh(y.value)
     else
         msg = "The argument must be dimensionless when calling atanh()."
         throw(ErrorException(msg))
@@ -849,7 +819,7 @@ end
 
 function Base.:(log)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = log(y.x)
+        n = log(y.value)
     else
         msg = "The argument must be dimensionless when calling log()."
         throw(ErrorException(msg))
@@ -859,7 +829,7 @@ end
 
 function Base.:(log2)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = log2(y.x)
+        n = log2(y.value)
     else
         msg = "The argument must be dimensionless when calling log2()."
         throw(ErrorException(msg))
@@ -869,7 +839,7 @@ end
 
 function Base.:(log10)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = log10(y.x)
+        n = log10(y.value)
     else
         msg = "The argument must be dimensionless when calling log10()."
         throw(ErrorException(msg))
@@ -879,7 +849,7 @@ end
 
 function Base.:(exp)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = exp(y.x)
+        n = exp(y.value)
     else
         msg = "The argument must be dimensionless when calling exp()."
         throw(ErrorException(msg))
@@ -889,7 +859,7 @@ end
 
 function Base.:(exp2)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = exp2(y.x)
+        n = exp2(y.value)
     else
         msg = "The argument must be dimensionless when calling exp2()."
         throw(ErrorException(msg))
@@ -899,7 +869,7 @@ end
 
 function Base.:(exp10)(y::PhysicalScalar)::Real
     if isDimensionless(y)
-        n = exp10(y.x)
+        n = exp10(y.value)
     else
         msg = "The argument must be dimensionless when calling exp10()."
         throw(ErrorException(msg))

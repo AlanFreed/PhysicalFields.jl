@@ -5,7 +5,7 @@ import
 
 import
     Base: abs, copy, deepcopy, get, getindex, setindex!, sign,
-          denominator, numerator,                    # for rationals
+          denominator, gcd, numerator,               # for rationals
           ceil, floor, round,                        # for reals
           abs2, angle, conj, imag, real,             # for complex
           cos, cosh, sin, sinh, tan, tanh, sqrt,     # trig functions
@@ -24,42 +24,22 @@ using
 export
     # abstract types
 
-    MType,                   # <: Number,  the base type for mutable types.
-    MNumber,                 # <: MType,   the base type for mutable numbers.
-
-    PhysicalUnits,           # Abstract type for systems of physical units.
-
+    MNumber,                 # <: Number,  base type for mutable numbers.
     PhysicalField,           # An abstract type for physical fields.
-
-    # Lower-level types needed to serialize the exported concrete types below.
-
-    LowerRational,
-    LowerComplex,
-    LowerUnits,
-    LowerVector,
-    LowerMatrix,
-    LowerArray,
-    LowerPhySca,
-    LowerPhyVec,
-    LowerPhyTen,
-    LowerArrPhySca,
-    LowerArrPhyVec,
-    LowerArrPhyTen,
 
     # concrete types
 
-    MBool,                   # <: MType,   a mutable boolean.
+    MBoolean,                #             a mutable boolean.
     MInteger,                # <: MNumber, a mutable integer number.
-    MRational,               # <: MNumber, a mutable rational number.
     MReal,                   # <: MNumber, a mutable real/floating-point number.
-    MComplex,                # <: MType,   a mutable complex number.
 
-    Dimensionless,           # <: PhysicalUnits, an absence of physical units.
-    CGS,                     # <: PhysicalUnits, Centimeter, Gram, Second units.
-    SI,                      # <: PhysicalUnits, International System of units.
-    #   units included are:  length, mass, time and temperature
-    #   units absent are:    electric current, amount of substance, and
-    #                        luminous intensity
+    MVector,                 # A vector with mutable elements.
+    MMatrix,                 # A matrix with mutable elements.
+    MArray,                  # A 3D array with mutable elements.
+
+    PhysicalUnits,           # Type for systems of physical units.
+    #   units included:        length, mass, amount of substance, time, temperature,
+    #                          electric current, and luminous intensity
 
     PhysicalScalar,          # <: PhysicalField,  A number with units.
     PhysicalVector,          # <: PhysicalField,  A vector (array)  with units.
@@ -90,13 +70,14 @@ export
     toCGS,
     toSI,
     toReal,
-    toArray,
+    toVector,
     toMatrix,
 
     norm,
     unitVector,
     cross,
 
+    matrixProduct,
     tensorProduct,
     transpose,
     tr,
@@ -107,16 +88,61 @@ export
 
     # constants
 
+    # SI physical constants: specific
+    JOULE,
+    KILOGRAM,
+    NEWTON,
+    METER,
+    PASCAL,
+
+    # SI physical constants: general (the default physical system of units)
+    ACCELERATION,
+    AMPERE,
+    AREA,
+    CANDELA,
+    COMPLIANCE,
+    DAMPING,
+    DIMENSIONLESS,
+    DISPLACEMENT,
+    ENERGY,
+    ENERGYperMASS,
+    ENTROPY,
+    ENTROPYperMASS,
+    FORCE,
+    GRAM_MOLE,
+    KELVIN,
+    LENGTH,
+    MASS,
+    MASS_DENSITY,
+    MODULUS,
+    POWER,
+    RECIPROCAL_TIME,
+    SECOND,
+    STIFFNESS,
+    STRAIN,
+    STRAIN_RATE,
+    STRESS,
+    STRESS_RATE,
+    STRETCH,
+    STRETCH_RATE,
+    TEMPERATURE,
+    TEMPERATURE_RATE,
+    TIME,
+    VELOCITY,
+    VOLUME,
+
     # CGS physical constants: specific
     BARYE,
-    CENTIGRADE,
     CENTIMETER,
     DYNE,
     ERG,
     GRAM,
+
     # CGS physical constants: general
     CGS_ACCELERATION,
+    CGS_AMPERE,
     CGS_AREA,
+    CGS_CANDELA,
     CGS_COMPLIANCE,
     CGS_DAMPING,
     CGS_DIMENSIONLESS,
@@ -126,6 +152,8 @@ export
     CGS_ENTROPY,
     CGS_ENTROPYperMASS,
     CGS_FORCE,
+    CGS_GRAM_MOLE,
+    CGS_KELVIN,
     CGS_LENGTH,
     CGS_MASS,
     CGS_MASS_DENSITY,
@@ -144,45 +172,7 @@ export
     CGS_TEMPERATURE_RATE,
     CGS_TIME,
     CGS_VELOCITY,
-    CGS_VOLUME,
-    # SI physical constants: specific
-    JOULE,
-    KELVIN,
-    KILOGRAM,
-    NEWTON,
-    METER,
-    PASCAL,
-    # SI physical constants: general
-    SI_ACCELERATION,
-    SI_AREA,
-    SI_COMPLIANCE,
-    SI_DAMPING,
-    SI_DIMENSIONLESS,
-    SI_DISPLACEMENT,
-    SI_ENERGY,
-    SI_ENERGYperMASS,
-    SI_ENTROPY,
-    SI_ENTROPYperMASS,
-    SI_FORCE,
-    SI_LENGTH,
-    SI_MASS,
-    SI_MASS_DENSITY,
-    SI_MODULUS,
-    SI_POWER,
-    SI_RECIPROCAL_TIME,
-    SI_SECOND,
-    SI_STIFFNESS,
-    SI_STRAIN,
-    SI_STRAIN_RATE,
-    SI_STRESS,
-    SI_STRESS_RATE,
-    SI_STRETCH,
-    SI_STRETCH_RATE,
-    SI_TEMPERATURE,
-    SI_TEMPERATURE_RATE,
-    SI_TIME,
-    SI_VELOCITY,
-    SI_VOLUME
+    CGS_VOLUME
 
 ### source files
 
