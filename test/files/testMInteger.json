@@ -1,0 +1,3 @@
+"Now we test writing/reading mutable integers to/from a file."
+123
+{"n":456}
