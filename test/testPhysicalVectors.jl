@@ -15,11 +15,11 @@ function run()
     println("Test the get and set operators via []:")
     a = PhysicalVector(3, DYNE)
     println("A new vector: ", toString(a; format))
-    a1 = PhysicalScalar(a.u)
+    a1 = PhysicalScalar(a.units)
     set!(a1, 1.0)
-    a2 = PhysicalScalar(a.u)
+    a2 = PhysicalScalar(a.units)
     set!(a2, 2.0)
-    a3 = PhysicalScalar(a.u)
+    a3 = PhysicalScalar(a.units)
     set!(a3, 3.0)
     a[1] = a1
     a[2] = a2
@@ -77,13 +77,13 @@ function run()
     println(toString(b; format))
     println("Check printing of intermediate length vectors:")
     c = PhysicalVector(9, CENTIMETER)
-    for i in 1:c.l
+    for i in 1:c.vector.len
         c[i] = b[i]
     end
     format = 'F'
     println(toString(c; format))
     d = PhysicalVector(6, CENTIMETER)
-    for i in 1:d.l
+    for i in 1:d.vector.len
         d[i] = b[i]
     end
     format = 'E'
@@ -155,7 +155,7 @@ function run()
         set!(vᵢ3, n)
         a[i] = vᵢ
     end
-    println("This array of vectors has a length of ", string(a.e), ".")
+    println("This array of vectors has a length of ", string(a.array.rows), ".")
     for i in 1:entries
         vᵢ = a[i]
         println("a[", string(i), "] = ", toString(vᵢ; format))

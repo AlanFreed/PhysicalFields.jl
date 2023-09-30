@@ -6,7 +6,7 @@ using
 export run
 
 function run(at_dir::String)
-    println("This function tests mutable floating-point numbers.")
+    println("This program tests mutable floating-point numbers.")
     x = MReal(-3.0)
     y = MReal(2.0)
     format = 'E'
@@ -80,11 +80,11 @@ function run(at_dir::String)
     println("with")
     println("sqrt(z)^2 = ", toString(sqrt(z)^2; format, precision, aligned))
     println()
-    println("If these answers make sense, then this test passes.")
-    println()
     wi = 1.234
     wj = -4.321
+    wk = 9.99e-9
     println("Now we test writing/reading mutable reals to/from a file.")
+    println()
     my_dir_path = string(at_dir, "/test/files/")
     json_stream = openJSONWriter(my_dir_path, "testMReal.json")
     toFile(wi, json_stream)
@@ -92,12 +92,19 @@ function run(at_dir::String)
     close(json_stream)
     json_stream = openJSONReader(my_dir_path, "testMReal.json")
     ri = fromFile(Real, json_stream)
-    println("The instance of type Real  read in is ", toString(ri),
-        ". It should read as $wi.")
+    print("The instance of type Real  should read as  $wi")
+    println(". It reads as:  ", toString(ri))
     rj = fromFile(MReal, json_stream)
-    println("The instance of type MReal read in is ", toString(rj),
-        ". It should read as $wj.")
+    print("The instance of type MReal should read as $wj")
+    println(". It reads as: ", toString(rj))
     close(json_stream)
+    println()
+    println("To ensure the MReal read in is in fact mutable,")
+    print("what was ", toString(rj), " should now read as $wk")
+    set!(rj, wk)
+    println(". It reads as: ", toString(rj), ".")
+    println()
+    println("If these answers make sense, then this test passes.")
     return nothing
 end
 

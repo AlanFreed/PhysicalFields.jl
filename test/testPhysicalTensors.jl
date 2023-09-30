@@ -9,14 +9,14 @@ export
 function run()
     format = 'F'
     println("Test the get and set operators via [].")
-    a = PhysicalTensor(3, 3, SI_VELOCITY)
+    a = PhysicalTensor(3, 3, VELOCITY)
     println("A new 3x3 matrix has values: ")
     println(toString(a; format))
     x = 0.0
     for i in 1:3
         for j in 1:3
             x += 1.0
-            a[i,j] = PhysicalScalar(x, a.u)
+            a[i,j] = PhysicalScalar(x, a.units)
         end
     end
     println("that are reassigned to have entries of")
@@ -25,8 +25,8 @@ function run()
     println("Check printing of large matrices:")
     b = PhysicalTensor(15, 15, KILOGRAM)
     x = 1.0
-    for i in 1:b.r
-        for j in 1:b.c
+    for i in 1:b.matrix.rows
+        for j in 1:b.matrix.cols
             x -= 0.01
             b[i,j] = PhysicalScalar(x, KILOGRAM)
         end
@@ -37,15 +37,15 @@ function run()
     println()
     println("Check printing of matrices, largest before truncating:")
     c = PhysicalTensor(10, 10, KILOGRAM)
-    for i in 1:c.r
-        for j in 1:c.c
+    for i in 1:c.matrix.rows
+        for j in 1:c.matrix.cols
             c[i,j] = b[i,j]
         end
     end
     println(toString(c; format))
     d = PhysicalTensor(6, 6, KILOGRAM)
-    for i in 1:d.r
-        for j in 1:d.c
+    for i in 1:d.matrix.rows
+        for j in 1:d.matrix.cols
             d[i,j] = b[i,j]
         end
     end
@@ -55,16 +55,17 @@ function run()
     println()
     println("Next dimension smaller:")
     e = PhysicalTensor(9, 9, KILOGRAM)
-    for i in 1:e.r
-        for j in 1:e.c
+    for i in 1:e.matrix.rows
+        for j in 1:e.matrix.cols
             e[i,j] = b[i,j]
         end
     end
+    println()
     format = 'F'
     println(toString(e; format))
     r = PhysicalTensor(5, 5, KILOGRAM)
-    for i in 1:r.r
-        for j in 1:r.c
+    for i in 1:r.matrix.rows
+        for j in 1:r.matrix.cols
             r[i,j] = b[i,j]
         end
     end
@@ -73,11 +74,12 @@ function run()
     println()
     println("Check out the printing of short-fat matrices:")
     g = PhysicalTensor(3, 12, KILOGRAM)
-    for i in 1:g.r
-        for j in 1:g.c
+    for i in 1:g.matrix.rows
+        for j in 1:g.matrix.cols
             g[i,j] = b[i,j]
         end
     end
+    println()
     format = 'F'
     println(toString(g; format))
     format = 'E'
@@ -85,8 +87,8 @@ function run()
     println()
     println("Check out the printing of tall-skiny matrices:")
     h = PhysicalTensor(12, 3, KILOGRAM)
-    for i in 1:h.r
-        for j in 1:h.c
+    for i in 1:h.matrix.rows
+        for j in 1:h.matrix.cols
             h[i,j] = b[i,j]
         end
     end
@@ -104,7 +106,7 @@ function run()
     for i in 1:3
         for j in 1:3
             x -= 1.0
-            b[i,j] = PhysicalScalar(x, b.u)
+            b[i,j] = PhysicalScalar(x, b.units)
         end
     end
     println("while a tensor 'b' has entries of")
@@ -138,17 +140,17 @@ function run()
     println("det a = ", toString(det(a)))
     println("aᵀ = \n", toString(transpose(a)))
     println()
-    c = PhysicalTensor(3, 3, SI_COMPLIANCE)
+    c = PhysicalTensor(3, 3, COMPLIANCE)
     println("A new matrix 'c' has values of: ")
-    c[1,1] = PhysicalScalar(MReal(3.0), SI_COMPLIANCE)
-    c[1,2] = PhysicalScalar(MReal(2.0), SI_COMPLIANCE)
-    c[1,3] = PhysicalScalar(MReal(1.0), SI_COMPLIANCE)
-    c[2,1] = PhysicalScalar(MReal(-3.0), SI_COMPLIANCE)
-    c[2,2] = PhysicalScalar(MReal(5.0), SI_COMPLIANCE)
-    c[2,3] = PhysicalScalar(MReal(-1.0), SI_COMPLIANCE)
-    c[3,1] = PhysicalScalar(MReal(0.0), SI_COMPLIANCE)
-    c[3,2] = PhysicalScalar(MReal(1.0), SI_COMPLIANCE)
-    c[3,3] = PhysicalScalar(MReal(5.0), SI_COMPLIANCE)
+    c[1,1] = PhysicalScalar(MReal(3.0),  COMPLIANCE)
+    c[1,2] = PhysicalScalar(MReal(2.0),  COMPLIANCE)
+    c[1,3] = PhysicalScalar(MReal(1.0),  COMPLIANCE)
+    c[2,1] = PhysicalScalar(MReal(-3.0), COMPLIANCE)
+    c[2,2] = PhysicalScalar(MReal(5.0),  COMPLIANCE)
+    c[2,3] = PhysicalScalar(MReal(-1.0), COMPLIANCE)
+    c[3,1] = PhysicalScalar(MReal(0.0),  COMPLIANCE)
+    c[3,2] = PhysicalScalar(MReal(1.0),  COMPLIANCE)
+    c[3,3] = PhysicalScalar(MReal(5.0),  COMPLIANCE)
     println(toString(c))
     println("det c = ", toString(det(c)))
     cInv = inv(c)
@@ -181,7 +183,7 @@ function run()
     println(toString(qE*qL))
     println()
     println("A Gram-Schmidt factorization of a 2x2 matrix d:")
-    d = PhysicalTensor(2, 2, SI_COMPLIANCE)
+    d = PhysicalTensor(2, 2, COMPLIANCE)
     d[1,1] = c[1,1]
     d[1,2] = c[1,2]
     d[2,1] = c[2,1]
@@ -211,20 +213,20 @@ function run()
     println(toString(qE*qL))
     println()
     println("Testing the solution for a linear system of equations Ax = b")
-    A = PhysicalTensor(3, 3, SI_MASS)
-    A[1,1] = PhysicalScalar(MReal(5), SI_MASS)
-    A[1,2] = PhysicalScalar(MReal(3), SI_MASS)
-    A[1,3] = PhysicalScalar(MReal(-1), SI_MASS)
-    A[2,1] = PhysicalScalar(MReal(-2), SI_MASS)
-    A[2,2] = PhysicalScalar(MReal(4), SI_MASS)
-    A[2,3] = PhysicalScalar(MReal(1), SI_MASS)
-    A[3,1] = PhysicalScalar(MReal(-4), SI_MASS)
-    A[3,2] = PhysicalScalar(MReal(2), SI_MASS)
-    A[3,3] = PhysicalScalar(MReal(6), SI_MASS)
-    b = PhysicalVector(3, SI_FORCE)
-    b[1] = PhysicalScalar(MReal(7), SI_FORCE)
-    b[2] = PhysicalScalar(MReal(3), SI_FORCE)
-    b[3] = PhysicalScalar(MReal(4), SI_FORCE)
+    A = PhysicalTensor(3, 3, MASS)
+    A[1,1] = PhysicalScalar(MReal(5), MASS)
+    A[1,2] = PhysicalScalar(MReal(3), MASS)
+    A[1,3] = PhysicalScalar(MReal(-1), MASS)
+    A[2,1] = PhysicalScalar(MReal(-2), MASS)
+    A[2,2] = PhysicalScalar(MReal(4), MASS)
+    A[2,3] = PhysicalScalar(MReal(1), MASS)
+    A[3,1] = PhysicalScalar(MReal(-4), MASS)
+    A[3,2] = PhysicalScalar(MReal(2), MASS)
+    A[3,3] = PhysicalScalar(MReal(6), MASS)
+    b = PhysicalVector(3, FORCE)
+    b[1] = PhysicalScalar(MReal(7), FORCE)
+    b[2] = PhysicalScalar(MReal(3), FORCE)
+    b[3] = PhysicalScalar(MReal(4), FORCE)
     x = A \ b
     println("where A = ")
     println(toString(A))
@@ -264,7 +266,7 @@ function run()
         mᵢ[2,3] = n
         array[i] = mᵢ
     end
-    println("This array of matrices has a length of ", string(array.e), ".")
+    println("This array of matrices has ", string(array.array.pgs), " pages.")
     for i in 1:entries
         mᵢ = array[i]
         println("array[", string(i), "] = \n", toString(mᵢ))

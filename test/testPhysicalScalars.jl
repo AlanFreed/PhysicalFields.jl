@@ -7,11 +7,9 @@ function run()
     format = 'F'
     precision = 5
     aligned = false
-    tC = PhysicalScalar(CENTIGRADE)
-    set!(tC, 37.0)
-    tK = toSI(tC)
-    s1 = "Body temperature = "
-    println(s1, toString(tC; format, precision, aligned), " = ", toString(tK; format, precision, aligned))
+    tK = PhysicalScalar(KELVIN)
+    set!(tK, 37.0+273.0)
+    println("Body temperature = ", toString(tK; format, precision, aligned))
     x  = PhysicalScalar(CGS_ACCELERATION)
     set!(x, -π)
     aligned = true
@@ -23,7 +21,7 @@ function run()
     σ  = PhysicalScalar(PASCAL)
     set!(σ, 1.234)
     y  = MReal(0.001234)
-    dϵ = PhysicalScalar(y, PhysicalFields.SI_STRAIN_RATE)
+    dϵ = PhysicalScalar(y, PhysicalFields.STRAIN_RATE)
     s1 = string("stress           σ = ", toString(σ; format, precision, aligned))
     s2 = string("strain rate     dϵ = ", toString(dϵ; format, precision, aligned))
     s3 = string("stress power  σ dϵ = ", toString(σ*dϵ; format, precision, aligned))
@@ -38,7 +36,7 @@ function run()
     s8 = string("strain rate     dϵ = ", toString(toSI(toCGS(dϵ)); format, precision, aligned))
     s9 = string("stress power  σ dϵ = ", toString(toSI(toCGS(σ*dϵ)); format, precision, aligned))
     println(s7, "\n", s8, "\n", s9)
-    ρ  = PhysicalScalar(CGS(-3, 1, 0, 0))
+    ρ  = PhysicalScalar(PhysicalUnits("CGS", -3, 1, 0, 0, 0, 0, 0))
     set!(ρ, 1.025)
     s10 = string("Density of salt water is: ", toString(ρ; format, precision, aligned))
     oneOnρ = 1 / ρ

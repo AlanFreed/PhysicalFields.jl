@@ -9,11 +9,9 @@ export
 function run(at_dir::String)
     # Create three scalars and populate an array of scalars with them.
     e1 = PhysicalScalar(CGS_ENERGY)
-    e2 = PhysicalScalar(CGS_ENERGY)
-    e3 = PhysicalScalar(CGS_ENERGY)
     set!(e1, 1.0)
-    set!(e2, 2.0)
-    set!(e3, 3.0)
+    e2 = PhysicalScalar(2, CGS_ENERGY)
+    e3 = PhysicalScalar(3, CGS_ENERGY)
     sArr = ArrayOfPhysicalScalars(3, CGS_ENERGY)
     sArr[1] = e1
     sArr[2] = e2
@@ -109,12 +107,12 @@ function run(at_dir::String)
     println()
     println("Check printing of medium length vectors in formats 'E' and 'F':")
     d = PhysicalVector(6, CENTIMETER)
-    for i in 1:d.l
+    for i in 1:d.vector.len
         d[i] = b[i]
     end
     println(toString(d))
     c = PhysicalVector(9, CENTIMETER)
-    for i in 1:c.l
+    for i in 1:c.vector.len
         c[i] = b[i]
     end
     println(toString(c; format))
@@ -122,8 +120,8 @@ function run(at_dir::String)
     println("Check printing of large matrices:")
     b = PhysicalTensor(15, 15, KILOGRAM)
     x = 1.0
-    for r in 1:b.r
-        for c in 1:b.c
+    for r in 1:b.matrix.rows
+        for c in 1:b.matrix.cols
             s = PhysicalScalar(KILOGRAM)
             set!(s, x)
             b[r,c] = s
@@ -136,15 +134,15 @@ function run(at_dir::String)
     println()
     println("Check printing of matrices, largest before truncating:")
     c = PhysicalTensor(10, 10, KILOGRAM)
-    for i in 1:c.r
-        for j in 1:c.c
+    for i in 1:c.matrix.rows
+        for j in 1:c.matrix.cols
             c[i,j] = b[i,j]
         end
     end
     println(toString(c; format))
     d = PhysicalTensor(6, 6, KILOGRAM)
-    for i in 1:d.r
-        for j in 1:d.c
+    for i in 1:d.matrix.rows
+        for j in 1:d.matrix.cols
             d[i,j] = b[i,j]
         end
     end
@@ -153,16 +151,16 @@ function run(at_dir::String)
     println()
     println("Next dimension smaller:")
     e = PhysicalTensor(9, 9, KILOGRAM)
-    for i in 1:e.r
-        for j in 1:e.c
+    for i in 1:e.matrix.rows
+        for j in 1:e.matrix.cols
             e[i,j] = b[i,j]
         end
     end
     println(toString(e; format))
     println()
     r = PhysicalTensor(5, 5, KILOGRAM)
-    for i in 1:r.r
-        for j in 1:r.c
+    for i in 1:r.matrix.rows
+        for j in 1:r.matrix.cols
             r[i,j] = b[i,j]
         end
     end
@@ -170,8 +168,8 @@ function run(at_dir::String)
     println()
     println("Check out the printing of short-fat matrices:")
     g = PhysicalTensor(3, 12, KILOGRAM)
-    for i in 1:g.r
-        for j in 1:g.c
+    for i in 1:g.matrix.rows
+        for j in 1:g.matrix.cols
             g[i,j] = b[i,j]
         end
     end
@@ -181,8 +179,8 @@ function run(at_dir::String)
     println()
     println("Check out the printing of tall-skiny matrices:")
     h = PhysicalTensor(12, 3, KILOGRAM)
-    for i in 1:h.r
-        for j in 1:h.c
+    for i in 1:h.matrix.rows
+        for j in 1:h.matrix.cols
             h[i,j] = b[i,j]
         end
     end
@@ -218,21 +216,21 @@ function run(at_dir::String)
     println("   It read in a tensor:\n", toString(m))
     sa = fromFile(ArrayOfPhysicalScalars, json_stream)
     println("An instance of type ArrayOfPhysicalScalars.")
-    for i in 1:sa.e
+    for i in 1:sa.array.len
         println("    For entry ", toString(i))
         println("        It wrote out scalar: ", toString(sArr[i]))
         println("        It read in a scalar: ", toString(sa[i]))
     end
     va = fromFile(ArrayOfPhysicalVectors, json_stream)
     println("An instance of type ArrayOfPhysicalVectors.")
-    for i in 1:va.e
+    for i in 1:va.array.rows
         println("    For entry ", toString(i))
         println("        It wrote out vector: ", toString(vArr[i]))
         println("        It read in a vector: ", toString(va[i]))
     end
     ma = fromFile(ArrayOfPhysicalTensors, json_stream)
     println("An instance of type ArrayOfPhysicalTensors.")
-    for i in 1:ma.e
+    for i in 1:ma.array.pgs
         println("    For entry ", toString(i))
         println("        It wrote out matrix:\n", toString(mArr[i]))
         println("        It read in a matrix:\n", toString(ma[i]))

@@ -6,7 +6,7 @@ using
 export run
 
 function run(at_dir::String)
-    println("This function tests mutable integers.")
+    println("This program tests mutable integers.")
     i = MInteger(-2)
     j = MInteger(3)
     aligned = true
@@ -39,26 +39,34 @@ function run(at_dir::String)
     println("    abs(i)      = ", toString(abs(i); aligned))
     println("    sign(i)     = ", toString(sign(i); aligned))
     println()
-    println("If these answers make sense, then this test passes.")
-    println()
     wi = 123
     wj = 456
+    wk = 654
     s = "Now we test writing/reading mutable integers to/from a file."
-    my_dir_path = string(at_dir, "/test/files/")
+    my_dir_path = string(at_dir, "test/files/")
     json_stream = openJSONWriter(my_dir_path, "testMInteger.json")
     toFile(s, json_stream)
     toFile(wi, json_stream)
-    toFile(MInteger(wj), json_stream)
+    mi = MInteger(wj)
+    toFile(mi, json_stream)
     close(json_stream)
     json_stream = openJSONReader(my_dir_path, "testMInteger.json")
     println(fromFile(String, json_stream))
+    println()
     ri = fromFile(Integer, json_stream)
-    println("The instance of type Integer  read in is ", toString(ri),
-        ". It should read as $wi.")
+    print("The instance of type Integer should read as  $wi", ". ")
+    println("It reads as: ", toString(ri), ".")
     rj = fromFile(MInteger, json_stream)
-    println("The instance of type MInteger read in is ", toString(rj),
-        ". It should read as ", toString(wj), ".")
+    print("The instance of type MInteger should read as $wj", ". ")
+    println("It reads as: ", toString(wj), ".")
     close(json_stream)
+    println()
+    println("To ensure the MInteger read in is in fact mutable,")
+    print("what was ", toString(rj), " should now read as $wk")
+    set!(rj, wk)
+    println(". It reads as: ", toString(rj), ".")
+    println()
+    println("If these answers make sense, then this test passes.")
     return nothing
 end
 

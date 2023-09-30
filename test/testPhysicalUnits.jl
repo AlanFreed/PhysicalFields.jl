@@ -6,20 +6,76 @@ using
 export run
 
 function run(at_dir::String)
-    println("CGS units:")
+    println("Basic SI units, the default system of physical units:")
+    println("   length:              ", toString(LENGTH))
+    println("   mass:                ", toString(MASS))
+    println("   amount of substance: ", toString(GRAM_MOLE))
+    println("   time:                ", toString(SECOND))
+    println("   temperature:         ", toString(KELVIN))
+    println("   electric current:    ", toString(AMPERE))
+    println("   light intensity:     ", toString(CANDELA))
+    println()
+    println("Some other SI types:")
+    println("   joule:           ", toString(JOULE))
+    println("   kilogram:        ", toString(KILOGRAM))
+    println("   meter:           ", toString(METER))
+    println("   newton:          ", toString(NEWTON))
+    println("   pascal:          ", toString(PASCAL), "\n")
+    println("   damping:         ", toString(DAMPING))
+    println("   stiffness:       ", toString(STIFFNESS))
+    println("   area:            ", toString(AREA))
+    println("   volume:          ", toString(VOLUME))
+    println("   mass density:    ", toString(MASS_DENSITY))
+    println("   displacement:    ", toString(DISPLACEMENT))
+    println("   velocity:        ", toString(VELOCITY))
+    println("   acceleration:    ", toString(ACCELERATION))
+    println("   force:           ", toString(FORCE))
+    println("   entropy:         ", toString(ENTROPY))
+    println("   entropy/mass:    ", toString(ENTROPYperMASS))
+    println("   energy:          ", toString(ENERGY))
+    println("   energy/mass:     ", toString(ENERGYperMASS))
+    println("   power:           ", toString(POWER))
+    println("   stress:          ", toString(STRESS))
+    println("   modulus:         ", toString(MODULUS))
+    println("   compliance:      ", toString(COMPLIANCE))
+    println("   strain:          ", toString(STRAIN))
+    println("   strain rate:     ", toString(STRAIN_RATE), "\n")
+    force = KILOGRAM + ACCELERATION
+    println("   mass + acceleration  = ", toString(force))
+    mass = force - ACCELERATION
+    println("   force - acceleration = ", toString(mass))
+    if STRESS ≠ FORCE
+        truth = "true"
+    else
+        truth = "false"
+    end
+    println("   stress ≠ force       = ", truth)
+    if STRESS == PASCAL
+        truth = "true"
+    else
+        truth = "false"
+    end
+    println("   stress == pascal     = ", string(truth))
+    println()
+    println("Basic CGS units:")
+    println("   length:              ", toString(CGS_LENGTH))
+    println("   mass:                ", toString(CGS_MASS))
+    println("   amount of substance: ", toString(CGS_GRAM_MOLE))
+    println("   time:                ", toString(CGS_SECOND))
+    println("   temperature:         ", toString(CGS_KELVIN))
+    println("   electric current:    ", toString(CGS_AMPERE))
+    println("   light intensity:     ", toString(CGS_CANDELA))
+    println()
+    println("Some other CGS units:")
     println("   barye:           ", toString(BARYE))
-    println("   centigrade:      ", toString(CENTIGRADE))
     println("   centimeter:      ", toString(CENTIMETER))
     println("   dyne:            ", toString(DYNE))
     println("   erg:             ", toString(ERG))
     println("   gram:            ", toString(GRAM), "\n")
-    println("   mass:            ", toString(CGS_MASS))
     println("   damping:         ", toString(CGS_DAMPING))
     println("   stiffness:       ", toString(CGS_STIFFNESS))
-    println("   length:          ", toString(CGS_LENGTH))
     println("   area:            ", toString(CGS_AREA))
     println("   volume:          ", toString(CGS_VOLUME))
-    println("   time:            ", toString(CGS_SECOND))
     println("   mass density:    ", toString(CGS_MASS_DENSITY))
     println("   displacement:    ", toString(CGS_DISPLACEMENT))
     println("   velocity:        ", toString(CGS_VELOCITY))
@@ -50,77 +106,28 @@ function run(at_dir::String)
     else
         truth = "false"
     end
-    println("   stress == barye      = ", string(truth), "\n")
-    println("SI units:")
-    println("   joule:           ", toString(JOULE))
-    println("   Kelvin:          ", toString(KELVIN))
-    println("   kilogram:        ", toString(KILOGRAM))
-    println("   meter:           ", toString(METER))
-    println("   newton:          ", toString(NEWTON))
-    println("   pascal:          ", toString(PASCAL), "\n")
-    println("   mass:            ", toString(SI_MASS))
-    println("   damping:         ", toString(SI_DAMPING))
-    println("   stiffness:       ", toString(SI_STIFFNESS))
-    println("   length:          ", toString(SI_LENGTH))
-    println("   area:            ", toString(SI_AREA))
-    println("   volume:          ", toString(SI_VOLUME))
-    println("   time:            ", toString(SI_SECOND))
-    println("   mass density:    ", toString(SI_MASS_DENSITY))
-    println("   displacement:    ", toString(SI_DISPLACEMENT))
-    println("   velocity:        ", toString(SI_VELOCITY))
-    println("   acceleration:    ", toString(SI_ACCELERATION))
-    println("   force:           ", toString(SI_FORCE))
-    println("   entropy:         ", toString(SI_ENTROPY))
-    println("   entropy/mass:    ", toString(SI_ENTROPYperMASS))
-    println("   energy:          ", toString(SI_ENERGY))
-    println("   energy/mass:     ", toString(SI_ENERGYperMASS))
-    println("   power:           ", toString(SI_POWER))
-    println("   stress:          ", toString(SI_STRESS))
-    println("   modulus:         ", toString(SI_MODULUS))
-    println("   compliance:      ", toString(SI_COMPLIANCE))
-    println("   strain:          ", toString(SI_STRAIN))
-    println("   strain rate:     ", toString(SI_STRAIN_RATE), "\n")
-    force = KILOGRAM + SI_ACCELERATION
-    println("   mass + acceleration  = ", toString(force))
-    mass = force - SI_ACCELERATION
-    println("   force - acceleration = ", toString(mass))
-    if SI_STRESS ≠ SI_FORCE
-        truth = "true"
-    else
-        truth = "false"
-    end
-    println("   stress ≠ force       = ", truth)
-    if SI_STRESS == PASCAL
-        truth = "true"
-    else
-        truth = "false"
-    end
-    println("   stress == pascal     = ", string(truth))
-    if BARYE == PASCAL
-        truth = "true"
-    else
-        truth = "false"
-    end
-    println("   barye  == pascal     = ", string(truth))
+    println("   CGS stress == barye  = ", truth)
+    println("   CGS stress == pascal = ", CGS_STRESS == PASCAL)
+    println("   barye and pascal are equivalent = ", areEquivalent(BARYE, PASCAL))
     println()
     println("Test reading and writing CGS and SI units from/to a JSON file.")
     println()
     my_dir_path = string(at_dir, "/test/files/")
     json_stream = openJSONWriter(my_dir_path, "testPhysicalUnits.json")
-    toFile(Dimensionless(), json_stream)
+    toFile(DIMENSIONLESS, json_stream)
     toFile(CGS_ENTROPY, json_stream)
-    toFile(SI_ENTROPY, json_stream)
+    toFile(ENTROPY, json_stream)
     close(json_stream)
     json_stream = openJSONReader(my_dir_path, "testPhysicalUnits.json")
     unitless = fromFile(PhysicalUnits, json_stream)
     println("Dimensionless units read in as: ", toString(unitless),
-        ". It should read as: ", toString(Dimensionless()), ".")
+        ". It should read as: ", toString(DIMENSIONLESS), ".")
     cgs = fromFile(PhysicalUnits, json_stream)
     println("An instance of type CGS read in as: ", toString(cgs),
         ". It should read as: ", toString(CGS_ENTROPY))
     si = fromFile(PhysicalUnits, json_stream)
     println("An instance of type SI  read in as: ", toString(si),
-        ".  It should read as: ", toString(SI_ENTROPY), ".")
+        ". It should read as: ", toString(ENTROPY), ".")
     close(json_stream)
     return nothing
 end
