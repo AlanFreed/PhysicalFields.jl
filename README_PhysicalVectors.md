@@ -9,43 +9,42 @@ A physical vector, or vector field, is a one-dimensional array of numbers associ
 For a vector field, use
 ```
 struct PhysicalVector <: PhysicalField
-    l::UInt8            # length of a vector
-    v::Vector           # values of a vector in its specified system of units
-    u::PhysicalUnits    # physical units of the vector
+    vector::MVector         # values of a vector in its specified system of units
+    units::PhysicalUnits    # physical units of the vector
 end
 ```
 and for an array of vector fields, use
 ```
 struct ArrayOfPhysicalVectors
-    e::UInt32           # number of entries or elements held in the array
-    l::UInt8            # length for each physical vector held in the array
-    a::Matrix           # array of vectors holding values of a physical vector
-    u::PhysicalUnits    # physical units of the vector array
+    array::MMatrix          # array of row vectors holding values of a physical vector
+    units::PhysicalUnits    # physical units of the vector array
 end
 ```
 where all entries in the array are vectors with the same length and the same physical system of units.
 
 ## Constructors
 
-There are two internal constructors. The first assumes that the values of its field are zero, while the second assigns values to this field.
+There are three internal constructors. The first assigns zeros to the vector field. The second assigns a raw array of 64-bit reals of the appropriate dimension. And the third assigns a mutable array of the appropriate dimension.
 
 ### PhysicalVector
 
 Constructors
 ```
-function PhysicalVector(len::Integer, units::PhysicalUnits)
-function PhysicalVector(len::Integer, vector::Vector, units::PhysicalUnits)
+function PhysicalVector(length::Integer, units::PhysicalUnits)
+function PhysicalVector(vector::Vector{Float64}, units::PhysicalUnits)
+function PhysicalVector(vector::MVector, units::PhysicalUnits) units::PhysicalUnits)
 ```
-These constructors will return a new vector object of length `len,` which must be within the range of 1…255, whose physical units are specified by argument `units.` The first constructor assigns numeric values of zero to each element of the vector field. The second constructor assigns numeric values to its vector field, as specified by argument `vector.`
+These constructors will return a new vector object whose physical units are specified by argument `units.` The first constructor assigns numeric values of zero to each element of the vector field. The other two constructors assign numeric values to its vector field, as specified by argument `vector.`
 
 ### ArrayOfPhysicalVectors
 
 Constructors
 ```
-function ArrayOfPhysicalVectors(arr_len::Integer, vec_len::Integer, units::PhysicalUnits)
-function ArrayOfPhysicalVectors(arr_len::Integer, vec_len::Integer, vec_vals::Matrix, units::PhysicalUnits)
+function ArrayOfPhysicalVectors(array_length::Integer, vector_length::Integer, units::PhysicalUnits)
+function ArrayOfPhysicalVectors(array::Matrix{Float64}, units::PhysicalUnits)
+function ArrayOfPhysicalVectors(array::MMatrix, units::PhysicalUnits)
 ```
-These constructors will return a new array of vector objects of like length and physical units. The length of the array of vectors is specified by argument `arr_len,` which must be within the range of 1…4,294,967,295. The length of each vector held by this array is the same and is specified by argument `vec_len,` which must be within the range of 1…255. The physical units for each of these vectors are the same, and is specified by argument `units.` The first constructor assigns numeric values of zero to each element of each vector field held in the array. The second constructor assigns numeric values to each vector field held in the array, as specified by argument `vec_vals,` which is a matrix of dimension `arr_len`×`vec_len.`
+These constructors will return a new array of vector objects of like length and physical units. The length of the array of vectors is specified by argument `array_length.` The length of each vector held by this array is the same and is specified by argument `vector_length.` The physical units for each of these vectors are the same, and is specified by argument `units.` The first constructor assigns numeric values of zero to each element of each vector field held in the array. The other two constructors assign numeric values to each vector field held in the array, as specified by argument `array,` which is a matrix of dimension `array_length`×`vector_length.`
 
 ## Methods
 
@@ -54,15 +53,15 @@ These constructors will return a new array of vector objects of like length and 
 These methods are to be used to retrieve and assign a `PhysicalScalar` from/to an element in a `PhysicalVector.`
 
 ```
-function Base.:(getindex)(y::PhysicalVector, idx::Integer)::PhysicalScalar
-function Base.:(setindex!)(y::PhysicalVector, val::PhysicalScalar, idx::Integer)
+function Base.:(getindex)(y::PhysicalVector, index::Integer)::PhysicalScalar
+function Base.:(setindex!)(y::PhysicalVector, scalar::PhysicalScalar, index::Integer)
 ```
 
-While these methods are to be used to retrieve and assign a `PhysicalVector` from/to an `ArrayOfPhysicalVectors.`
+While the following methods are to be used to retrieve and assign a `PhysicalVector` from/to an `ArrayOfPhysicalVectors.`
 
 ```
-function Base.:(getindex)(y::ArrayOfPhysicalVectors, idx::Integer)::PhysicalVector
-function Base.:(setindex!)(y::ArrayOfPhysicalVectors, val::PhysicalVector, idx::Integer)
+function Base.:(getindex)(y::ArrayOfPhysicalVectors, index::Integer)::PhysicalVector
+function Base.:(setindex!)(y::ArrayOfPhysicalVectors, vector::PhysicalVector, index::Integer)
 ```
 
 Because these methods extend the `Base` functions `getindex` and `setindex!,` the bracket notation `[]` can be used to *i)* retrieve and assign scalar fields belonging to an instance of `PhysicalVector`, and *ii)* retrieve and assign vector fields belonging to an instance of `ArrayOfPhysicalVectors`.
@@ -71,13 +70,13 @@ Because these methods extend the `Base` functions `getindex` and `setindex!,` th
 
 For making shallow copies, use
 ```
-function Base.:(copy)(v::PhysicalVector)::PhysicalVector
-function Base.:(copy)(av::ArrayOfPhysicalVectors)::ArrayOfPhysicalVectors
+function Base.:(copy)(y::PhysicalVector)::PhysicalVector
+function Base.:(copy)(y::ArrayOfPhysicalVectors)::ArrayOfPhysicalVectors
 ```
 and for making deep copies, use
 ```
-function Base.:(deepcopy)(v::PhysicalVector)::PhysicalVector
-function Base.:(deepcopy)(av::ArrayOfPhysicalVectors)::ArrayOfPhysicalVectors
+function Base.:(deepcopy)(y::PhysicalVector)::PhysicalVector
+function Base.:(deepcopy)(y::ArrayOfPhysicalVectors)::ArrayOfPhysicalVectors
 ```
 
 ## Readers and Writers
@@ -87,57 +86,57 @@ To write a vector or an array of vectors to a JSON file, one can call
 function toFile(y::PhysicalVector, json_stream::IOStream)
 function toFile(y::ArrayOfPhysicalVectors, json_stream::IOStream)
 ```
-where argument `json_stream` comes from a call to `openJSONWriter.` 
+where argument `json_stream` comes from a call to `openJSONWriter` discussed on page [README.md](./README.md).
 
 To read a vector or an array of vectors from a JSON file, one can call
 ```
 function fromFile(::Type{PhysicalVector}, json_stream::IOStream)::PhysicalVector
 function fromFile(::Type{ArrayOfPhysicalVectors}, json_stream::IOStream)::ArrayOfPhysicalVectors
 ```
-where argument `json_stream` comes from a call to `openJSONReader.` 
+where argument `json_stream` comes from a call to `openJSONReader` discussed on page [README.md](./README.md).
 
 ## Type conversions
 
 Conversion to a string is provided for instances of `PhysicalVector` by the method
 
 ```
-function toString(v::PhysicalVector; format::Char='E')::String
+function toString(y::PhysicalVector; format::Char='E')::String
 ```
 
 where the keyword `format` is a character that, whenever its value is 'E' or 'e', represents the vector components in a scientific notation; otherwise, they will be represented in a fixed-point notation.
 
 Conversion to the raw array of numbers held by the vector is provided for by
 ```
-function toArray(v::PhysicalVector)::Vector
+function toVector(y::PhysicalVector)::Vector{Float64}
 ```
 
-Converting a vector field between CGS and SI units is accomplished via
+Converting a vector field between SI and CGS units is accomplished via
 ```
-function toCGS(v::PhysicalVector)::PhysicalVector
-function toSI(v::PhysicalVector)::PhysicalVector
+function toSI(y::PhysicalVector)::PhysicalVector
+function toCGS(y::PhysicalVector)::PhysicalVector
 ```
-and to convert an array of vectors between CGS and SI units, use
+and to convert an array of vectors between SI and CGS units, use
 ```
-function toCGS(av::ArrayOfPhysicalVectors)::ArrayOfPhysicalVectors
-function toSI(av::ArrayOfPhysicalVectors)::ArrayOfPhysicalVectors
+function toSI(y::ArrayOfPhysicalVectors)::ArrayOfPhysicalVectors
+function toCGS(y::ArrayOfPhysicalVectors)::ArrayOfPhysicalVectors
 ```
 
 ## Unit Testing
 
-To test a vector or an array of vectors to see if they are dimensionless, call
+To test a vector or an array of vectors to see if it is dimensionless, call
 ```
-function isDimensionless(v::PhysicalVector)::Bool
-function isDimensionless(av::ArrayOfPhysicalVectors)::Bool
+function isDimensionless(y::PhysicalVector)::Bool
+function isDimensionless(y::ArrayOfPhysicalVectors)::Bool
 ```
-To test a vector or an array of vectors to see if they have CGS units, call
+To test a vector or an array of vectors to see if they has SI units, call
 ```
-function isCGS(v::PhysicalVector)::Bool
-function isCGS(av::ArrayOfPhysicalVectors)::Bool
+function isSI(y::PhysicalVector)::Bool
+function isSI(y::ArrayOfPhysicalVectors)::Bool
 ```
-To test a vector or an array of vectors to see if they have SI units, call
+and to test a vector or an array of vectors to see if they have CGS units, call
 ```
-function isSI(v::PhysicalVector)::Bool
-function isSI(av::ArrayOfPhysicalVectors)::Bool
+function isCGS(y::PhysicalVector)::Bool
+function isCGS(y::ArrayOfPhysicalVectors)::Bool
 ```
 
 ## Operators
@@ -168,7 +167,7 @@ Method
 ```
 function LinearAlgebra.:(cross)(y::PhysicalVector, z::PhysicalVector)::PhysicalVector
 ```
-returns the cross product `y`×`z`, provided these two vectors each has a length (dimension) of 3.
+returns the cross product `y`×`z,` provided these two vectors each has a length (dimension) of 3.
 
 [Home Page](.\README.md)
 

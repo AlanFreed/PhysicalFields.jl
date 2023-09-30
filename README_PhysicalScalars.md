@@ -11,25 +11,24 @@ A physical scalar, or scalar field, is a number associated with a set of physica
 For a scalar field, use the type
 ```
 struct PhysicalScalar <: PhysicalField
-    x::MReal            # value of a scalar in its specified system of units
-    u::PhysicalUnits    # physical units of the scalar
+    value::MReal            # value of a scalar in its specified system of units
+    units::PhysicalUnits    # physical units of the scalar
 end
 ```
 The value held by a scalar is mutable.
 
-For an array of a scalar fields, use the type
+For an array of scalar fields, use the type
 ```
 struct ArrayOfPhysicalScalars
-    e::UInt32           # number of entries or elements held in the array
-    a::Vector           # array holding values of a physical scalar
-    u::PhysicalUnits    # physical units of the scalar array
+    array::MVector          # array holding values of a physical scalar
+    units::PhysicalUnits    # physical units of the scalar array
 end
 ```
-where all entries in an array have the same physical units. These array entries are mutable.
+where all entries in the array have the same physical units. These array entries are mutable.
 
 ## Constructors
 
-There are two internal constructors. The first assumes the value of its field is zero, while the second assigns a value to this field.
+There are two kinds of internal constructors. The first constructor assigns zero(s) to its field, while the other constructors assigns value(s) to this field.
 
 ### PhysicalScalar
 
@@ -44,41 +43,42 @@ These constructors will return a new scalar object whose physical units are spec
 
 Constructors
 ```
-function ArrayOfPhysicalScalars(arr_len::Integer, units::PhysicalUnits)
-function ArrayOfPhysicalScalars(arr_len::Integer, sca_vals::Vector, units::PhysicalUnits)
+function ArrayOfPhysicalScalars(array_length::Integer, units::PhysicalUnits)
+function ArrayOfPhysicalScalars(scalar_values::Vector{Float64}, units::PhysicalUnits)
+function ArrayOfPhysicalScalars(scalar_values::MVector, units::PhysicalUnits)
 ```
-These constructors will return a new array of scalars whose length is specified by argument `arr_len` that can accept values within the range of 1…4,294,967,295, wherein all elements of the array will have physical units specified by argument `units.` The first constructor creates an array with zero values, while the second constructor assigns values to this internal array, as supplied by the vector argument `sca_vals,` which is an array of dimension `arr_len.`
+These constructors will return a new array of scalars whose length is specified by argument `array_length,` wherein all elements of the array will have physical units specified by argument `units.` The first constructor creates an array with zero values, while the remaining constructors assign values to this internal array, as supplied by the vector argument `scalar_values,` which is an array of dimension `array_length.`
 
 # Methods
 ## Get and Set!
 
-These functions are to be used to retrieve and assign `Real` values from/to a `PhysicalScalar`.
+These functions are to be used to retrieve and assign `Real` values from/to a `PhysicalScalar.`
 
 ```
 function Base.:(get)(y::PhysicalScalar)::Real
 function set!(y::PhysicalScalar, x::Real)
 ```
 
-While these functions are to be used to retrieve and assign a `PhysicalScalar` from/to an `ArrayOfPhysicalScalars`.
+While these functions are to be used to retrieve and assign a `PhysicalScalar` from/to an `ArrayOfPhysicalScalars.`
 
 ```
-function Base.:(getindex)(y::ArrayOfPhysicalScalars, idx::Integer)::PhysicalScalar
-function Base.:(setindex!)(y::ArrayOfPhysicalScalars, val::PhysicalScalar, idx::Integer)
+function Base.:(getindex)(y::ArrayOfPhysicalScalars, index::Integer)::PhysicalScalar
+function Base.:(setindex!)(y::ArrayOfPhysicalScalars, scalar::PhysicalScalar, index::Integer)
 ```
 
-Because these extend the `Base` functions `getindex` and `setindex!`, the bracket notation `[]` can be used to retrieve and assign individual scalar fields belonging to an instance of `ArrayOfPhysicalScalars`.
+Because these extend the `Base` functions `getindex` and `setindex!`, the bracket notation `[]` can be used to retrieve and assign individual scalar fields belonging to an instance of `ArrayOfPhysicalScalars.`
 
 ## Copy
 
 For making shallow copies, use
 ```
-function Base.:(copy)(s::PhysicalScalar)::PhysicalScalar
-function Base.:(copy)(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
+function Base.:(copy)(y::PhysicalScalar)::PhysicalScalar
+function Base.:(copy)(y::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
 ```
 and for making deep copies, use
 ```
-function Base.:(deepcopy)(s::PhysicalScalar)::PhysicalScalar
-function Base.:(deepcopy)(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
+function Base.:(deepcopy)(y::PhysicalScalar)::PhysicalScalar
+function Base.:(deepcopy)(y::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
 ```
 
 ## Readers and Writers
@@ -99,14 +99,14 @@ To write a scalar or an array of scalars to a JSON file, one can call
 function toFile(y::PhysicalScalar, json_stream::IOStream)
 function toFile(y::ArrayOfPhysicalScalars, json_stream::IOStream)
 ```
-where argument `json_stream` comes from a call to `openJSONWriter.` 
+where argument `json_stream` comes from a call to `openJSONWriter` found in [README.md](.\README.md).
 
 To read a scalar or an array of scalars from a JSON file, one can call
 ```
 function fromFile(::Type{PhysicalScalar}, json_stream::IOStream)::PhysicalScalar
 function fromFile(::Type{ArrayOfPhysicalScalars}, json_stream::IOStream)::ArrayOfPhysicalScalars
 ```
-where argument `json_stream` comes from a call to `openJSONReader.` 
+where argument `json_stream` comes from a call to `openJSONReader` found in [README.md](.\README.md).
 
 ## Type Conversions
 
@@ -117,31 +117,31 @@ function toReal(s::PhysicalScalar)::Real
 
 Convert a scalar field between CGS and SI units by calling
 ```
-function toCGS(s::PhysicalScalar)::PhysicalScalar
-function toSI(s::PhysicalScalar)::PhysicalScalar
+function toSI(y::PhysicalScalar)::PhysicalScalar
+function toCGS(y::PhysicalScalar)::PhysicalScalar
 ```
 and convert an array of scalars between CGS and SI units by calling
 ```
-function toCGS(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
-function toSI(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
+function toSI(y::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
+function toCGS(y::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
 ```
 
 ## Unit Testing
 
 To test a scalar or an array of scalars to see if they are dimensionless, call
 ```
-function isDimensionless(s::PhysicalScalar)::Bool
-function isDimensionless(as::ArrayOfPhysicalScalars)::Bool
-```
-To test a scalar or an array of scalars to see if they have CGS units, call
-```
-function isCGS(s::PhysicalScalar)::Bool
-function isCGS(as::ArrayOfPhysicalScalars)::Bool
+function isDimensionless(y::PhysicalScalar)::Bool
+function isDimensionless(y::ArrayOfPhysicalScalars)::Bool
 ```
 To test a scalar or an array of scalars to see if they have SI units, call
 ```
-function isSI(s::PhysicalScalar)::Bool
-function isSI(as::ArrayOfPhysicalScalars)::Bool
+function isSI(y::PhysicalScalar)::Bool
+function isSI(y::ArrayOfPhysicalScalars)::Bool
+```
+To test a scalar or an array of scalars to see if they have CGS units, call
+```
+function isCGS(y::PhysicalScalar)::Bool
+function isCGS(y::ArrayOfPhysicalScalars)::Bool
 ```
 
 ## Operators
@@ -160,17 +160,9 @@ The following methods are math functions that return a physical scalar and can h
 
 ```
 function Base.:(abs)(s::PhysicalScalar)::PhysicalScalar
-```
-```
 function Base.:(round)(y::PhysicalScalar)::PhysicalScalar
-```
-```
 function Base.:(ceil)(y::PhysicalScalar)::PhysicalScalar
-```
-```
 function Base.:(floor)(y::PhysicalScalar)::PhysicalScalar
-```
-```
 function Base.:(sqrt)(y::PhysicalScalar)::PhysicalScalar
 ```
 where taking the square root of a scalar requires the powers of its physical units be exactly divisible by 2.
@@ -179,8 +171,6 @@ The following methods are math functions that return a real number whose argumen
 
 ```
 function Base.:(sign)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(atan)(y::PhysicalScalar, x::PhysicalScalar)::Real
 ```
 
@@ -190,58 +180,25 @@ The following methods are math functions that return a real number whose scalar 
 
 ```
 function Base.:(sin)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(cos)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(tan)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(asin)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(acos)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(atan)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(sinh)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(cosh)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(tanh)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(asinh)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(acosh)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(atanh)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(log)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(log2)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(log10)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(exp)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(exp2)(y::PhysicalScalar)::Real
-```
-```
 function Base.:(exp10)(y::PhysicalScalar)::Real
 ```
+These are the same functions that have been extended for mutable numbers found on page [Mutable Types](.\README_MutableTypes.md).
 
 [Home Page](.\README.md)
 
