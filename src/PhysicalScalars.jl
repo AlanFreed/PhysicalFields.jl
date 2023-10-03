@@ -627,7 +627,9 @@ function Base.:(floor)(y::PhysicalScalar)::PhysicalScalar
 end
 
 function Base.:(sqrt)(y::PhysicalScalar)::PhysicalScalar
-    if isSI(y)
+    if isDimensionless(y)
+        units = y.units
+    elseif isSI(y)
         if ((y.units.length%2 == 0) &&
             (y.units.mass%2 == 0) &&
             (y.units.amount_of_substance%2 == 0) &&
