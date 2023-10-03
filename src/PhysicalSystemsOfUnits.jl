@@ -144,7 +144,13 @@ function Base.:-(y::PhysicalUnits)::PhysicalUnits
 end
 
 function Base.:+(y::PhysicalUnits, z::PhysicalUnits)::PhysicalUnits
-    if y.system == z.system
+    if isDimensionless(y) && isDimensionless(z)
+        if isCGS(y) && isCGS(z)
+            return PhysicalUnits("CGS", 0, 0, 0, 0, 0, 0, 0)
+        else
+            return PhysicalUnits("SI", 0, 0, 0, 0, 0, 0, 0)
+        end
+    elseif y.system == z.system
         length = y.length + z.length
         mass = y.mass + z.mass
         amount_of_substance = y.amount_of_substance + z.amount_of_substance
@@ -160,7 +166,13 @@ function Base.:+(y::PhysicalUnits, z::PhysicalUnits)::PhysicalUnits
 end
 
 function Base.:-(y::PhysicalUnits, z::PhysicalUnits)::PhysicalUnits
-    if y.system == z.system
+    if isDimensionless(y) && isDimensionless(z)
+        if isCGS(y) && isCGS(z)
+            return PhysicalUnits("CGS", 0, 0, 0, 0, 0, 0, 0)
+        else
+            return PhysicalUnits("SI", 0, 0, 0, 0, 0, 0, 0)
+        end
+    elseif y.system == z.system
         length = y.length - z.length
         mass = y.mass - z.mass
         amount_of_substance = y.amount_of_substance - z.amount_of_substance
