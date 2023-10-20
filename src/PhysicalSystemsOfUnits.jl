@@ -124,7 +124,8 @@ end
 #                             binary:  +, -
 
 function Base.:(==)(y::PhysicalUnits, z::PhysicalUnits)::Bool
-    if (y.system == z.system) && areEquivalent(y, z)
+    if ((isDimensionless(y) && isDimensionless(z)) ||
+        ((y.system == z.system) && areEquivalent(y, z)))
         return true
     else
         return false
