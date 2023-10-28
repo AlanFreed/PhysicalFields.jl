@@ -45,7 +45,7 @@ end
 Mutable vectors (1D arrays) belong to the type:
 ```
 struct MVector
-    len::Integer            # The vector's length, which is not mutable.
+    const len::Integer      # The vector's length, which is not mutable.
     vec::Vector{Float64}    # A column vector whose entries are mutable.
 end
 ```
@@ -53,8 +53,8 @@ end
 Mutable matrices (2D arrays) belong to the type:
 ```
 struct MMatrix
-    rows::Integer           # Rows in a matrix, which is not mutable.
-    cols::Integer           # Columns in a matrix, which is not mutable.
+    const rows::Integer     # Rows in a matrix, which is not mutable.
+    const cols::Integer     # Columns in a matrix, which is not mutable.
     vec::Vector{Float64}    # The matrix reshaped as a mutable column vector.
 end
 ```
@@ -67,10 +67,10 @@ so that, e.g., `matrix[row, column]` returns `matrix.vec[index].` All indexing i
 Mutable 3D arrays belong to the type:
 ```
 struct MArray
-    pgs::Integer            # Pages in an array, which is not mutable.
+    const pgs::Integer      # Pages in an array, which is not mutable.
                             #    Each page contains a rows×cols matrix.
-    rows::Integer           # Matrix rows in each page, which is not mutable.
-    cols::Integer           # Matrix columns in each page, which is not mutable.
+    const rows::Integer     # Matrix rows in each page, which is not mutable.
+    const cols::Integer     # Matrix columns in each page, which is not mutable.
     vec::Vector{Float64}    # The 3D array reshaped as a mutable column vector.
 end
 ```

@@ -137,6 +137,10 @@ All integer values are stored in JSON files as `Int64` objects, while all real v
 
 ## Version History
 
+### Version 1.2.1
+
+With version 1.8 of Julia, fields specified by *const* in a mutable struct cannot be reassigned after object creation. This feature was added to the mutable data structures `MVector,` `MMatrix` and `MArray` for their dimension parameters.
+
 ### Version 1.2
 
 Mutable 1D vectors, 2D matrices, and 3D arrays have been added. The 2D and 3D arrays are represented internally as 1D arrays whose index operator [] handles the mappings between them. This is done to allow them all to be written-to and read-from a JSON file in an efficient and robust manner.
