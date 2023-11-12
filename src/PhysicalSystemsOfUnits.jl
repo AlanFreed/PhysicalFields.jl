@@ -195,7 +195,7 @@ end
 # Methods extending their base methods.
 
 function Base.:(copy)(y::PhysicalUnits)::PhysicalUnits
-    system = copy(y.system)
+    system = y.system
     length = copy(y.length)
     mass = copy(y.mass)
     amount_of_substance = copy(y.amount_of_substance)
@@ -203,11 +203,11 @@ function Base.:(copy)(y::PhysicalUnits)::PhysicalUnits
     temperature = copy(y.temperature)
     electric_current = copy(y.electric_current)
     light_intensity = copy(y.light_intensity)
-    return PhysicalUnits(y.system, length, mass, amount_of_substance, time, temperature, electric_current, light_intensity)
+    return PhysicalUnits(system, length, mass, amount_of_substance, time, temperature, electric_current, light_intensity)
 end
 
 function Base.:(deepcopy)(y::PhysicalUnits)::PhysicalUnits
-    system = deepcopy(y.system)
+    system = y.system
     length = deepcopy(y.length)
     mass = deepcopy(y.mass)
     amount_of_substance = deepcopy(y.amount_of_substance)
@@ -215,7 +215,7 @@ function Base.:(deepcopy)(y::PhysicalUnits)::PhysicalUnits
     temperature = deepcopy(y.temperature)
     electric_current = deepcopy(y.electric_current)
     light_intensity = deepcopy(y.light_intensity)
-    return PhysicalUnits(y.system, length, mass, amount_of_substance, time, temperature, electric_current, light_intensity)
+    return PhysicalUnits(system, length, mass, amount_of_substance, time, temperature, electric_current, light_intensity)
 end
 
 #=
