@@ -1,7 +1,7 @@
 name = "PhysicalFields"
 uuid = "ecb0663d-aa47-424e-b5ff-03a0dca9671a"
 authors = ["Alan Freed <alan.d.freed@proton.me>"]
-version = "1.2.2"
+version = "1.2.3"
 
 [deps]
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
