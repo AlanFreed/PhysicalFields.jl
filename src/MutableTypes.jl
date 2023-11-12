@@ -71,7 +71,7 @@ end
 
 # Exported arrays with mutable values, i.e., mutable array entries.
 
-struct MVector
+mutable struct MVector
     const len::Integer      # The vector's length, which is not mutable.
     vec::Vector{Float64}    # A column vector whose entries are mutable.
 
@@ -96,7 +96,7 @@ struct MVector
     end
 end
 
-struct MMatrix
+mutable struct MMatrix
     const rows::Integer     # Rows in a matrix, which is not mutable.
     const cols::Integer     # Columns in a matrix, which is not mutable.
     vec::Vector{Float64}    # The matrix reshaped as a mutable column vector.
@@ -132,7 +132,7 @@ struct MMatrix
     end
 end
 
-struct MArray
+mutable struct MArray
     const pgs::Integer      # Pages in an array, which is not mutable.
                             #    Each page contains a rows×cols matrix.
     const rows::Integer     # Matrix rows in each page, which is not mutable.
