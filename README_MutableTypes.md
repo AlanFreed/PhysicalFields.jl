@@ -45,17 +45,17 @@ end
 Mutable vectors (1D arrays) belong to the type:
 ```
 struct MVector
-    const len::Integer      # The vector's length, which is not mutable.
-    vec::Vector{Float64}    # A column vector whose entries are mutable.
+    len::Int64              # A vector's length, which is fixed.
+    vec::Vector{Float64}    # A column vector with mutable elements.
 end
 ```
 
 Mutable matrices (2D arrays) belong to the type:
 ```
 struct MMatrix
-    const rows::Integer     # Rows in a matrix, which is not mutable.
-    const cols::Integer     # Columns in a matrix, which is not mutable.
-    vec::Vector{Float64}    # The matrix reshaped as a mutable column vector.
+    rows::Int64             # Rows in a matrix, which is fixed.
+    cols::Int64             # Columns in a matrix, which is fixed.
+    vec::Vector{Float64}    # A matrix reshaped as a column vector with mutable elements.
 end
 ```
 where vector `vec` indexes along the matrix's column vectors according to
@@ -67,11 +67,11 @@ so that, e.g., `matrix[row, column]` returns `matrix.vec[index].` All indexing i
 Mutable 3D arrays belong to the type:
 ```
 struct MArray
-    const pgs::Integer      # Pages in an array, which is not mutable.
+    pgs::Int64              # Pages in an array, which is fixed.
                             #    Each page contains a rows×cols matrix.
-    const rows::Integer     # Matrix rows in each page, which is not mutable.
-    const cols::Integer     # Matrix columns in each page, which is not mutable.
-    vec::Vector{Float64}    # The 3D array reshaped as a mutable column vector.
+    rows::Int64             # Matrix rows in each page, which is fixed.
+    cols::Int64             # Matrix columns in each page, which is fixed.
+    vec::Vector{Float64}    # An array reshaped as a column vector with mutable elements.
 end
 ```
 where vector `vec` indexes along the array's columns according to
@@ -112,15 +112,15 @@ which take upon the appearance of a type casting.
 
 There are also constructors containing only dimensioning arguments, e.g.,
 ```
-   vec = MVector(length::Integer)
-   mtx = MMatrix(rows::Integer, columns::Integer)
-   arr = MArray(pages::Integer, rows::Integer, columns::Integer)
+   vec = MVector(length::Int64)
+   mtx = MMatrix(rows::Int64, columns::Int64)
+   arr = MArray(pages::Int64, rows::Int64, columns::Int64)
 ```
 And, for JSON file structure compatibility, there are constructors
 ```
-   vec = MVector(length::Integer, vector::Vector{Float64})
-   mtx = MMatrix(rows::Integer, columns::Integer, vector::Vector{Float64})
-   arr = MArray(pages::Integer, rows::Integer, columns::Integer, vector::Vector{Float64})
+   vec = MVector(length::Int64, vector::Vector{Float64})
+   mtx = MMatrix(rows::Int64, columns::Int64, vector::Vector{Float64})
+   arr = MArray(pages::Int64, rows::Int64, columns::Int64, vector::Vector{Float64})
 ```
 where `length(vec.vec) = length,` `length(mtx.vec) = rows*columns,` and `length(arr.vec) = pages*rows*columns.`
 
@@ -155,18 +155,11 @@ The chosen protocol for persistence requires that one knows the type belonging t
 
 A method that converts mutable objects into human readable strings is:
 ```
-function toString(y::MBoolean;
-                  aligned::Bool=false)::String
-function toString(y::MInteger;
-                  aligned::Bool=false)::String
-function toString(y::MReal;
-                  format::Char='E',
-                  precision::Int=5,
-                  aligned::Bool=false)::String
-function toString(mv::MVector;
-                  format::Char='E')::String
-function toString(y::MMatrix;
-                  format::Char='E')::String
+function toString(y::MBoolean; aligned::Bool=false)::String
+function toString(y::MInteger; digits::Int64=0)::String
+function toString(y::MReal; format::Char='E', precision::Int=5, aligned::Bool=false)::String
+function toString(mv::MVector; format::Char='E')::String
+function toString(y::MMatrix; format::Char='E')::String
 ```
 For the various `toString` interfaces listed above, their keywords are given default values that can be overwritten. Specifically, 
 
@@ -195,7 +188,7 @@ These methods require the object being read in be of known type, fore which a ca
 
 To write instances the above mutable types to a JSON file, one can call the method
 ```
-function toFile(y:MBoolean, json_stream::IOStream)
+function toFile(y::MBoolean, json_stream::IOStream)
 function toFile(y::MInteger, json_stream::IOStream)
 function toFile(y::MReal, json_stream::IOStream)
 function toFile(y::MVector, json_stream::IOStream)
@@ -383,7 +376,7 @@ function matrixProduct(y::MVector, z::Vector{Float64})::Matrix{Float64}
 
 ## Note
 
-All methods, operators and math functions pertaining to these types (except for `copy` and `deepcopy`) return instances belonging to their associated core types: viz., `Bool,` `Integer,` `Real,` `Vector{Float64},` `Matrix{Float64}` or `Array{Float64,3}.` This is because their intended use is to permit mutable fields to be incorporated into what are otherwise immutable data structures; thereby, allowing such fields to have a potential to change their values. As such, mutable fields belonging to immutable data structures will have the necessary infrastructure to be able to be used seamlessly in simple mathematical formulae outside their defining data structures.
+All methods, operators and math functions pertaining to these types (except for `copy` and `deepcopy`) return instances belonging to their associated core types: viz., `Bool,` `Integer,` `Real,` `Vector{Float64},` `Matrix{Float64}` or `Array{Float64,3}.` This is because their intended use is to permit mutable fields to be incorporated into what are otherwise immutable data structures; thereby, allowing such fields to have a potential to change their values. As such, mutable fields belonging to immutable data structures will have the necessary infrastructure to be able to be used seamlessly in simple mathematical formulæ outside their defining data structures.
 
 [Home Page](.\README.md)
 

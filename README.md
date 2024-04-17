@@ -1,6 +1,6 @@
 # PhysicalFields
 
-A physical field is comprised of a numeric value---viz., a number (scalar), an array (vector), or a matrix (tensor)---plus the physical units in terms of which its numeric value has meaning. Temperature is an example for a scalar. Force is an example for a vector. Stress is an example for a tensor. This module creates such fields in a manner that they are readily adaptable for analysis.
+A physical field is comprised of a numeric value---viz., a number (scalar), an array (vector), or a matrix (tensor)---plus the physical units in terms of which its numeric value has meaning. Pressure is an example for a scalar. Force is an example for a vector. Stress is an example for a tensor. This module creates such fields in a manner that they are readily adaptable for analysis.
 
 To use this module, you will need to add it to your package:
 
@@ -23,7 +23,7 @@ abstract type PhysicalField end
 
 This part of the module provides mutable boolean, integer and real number types, plus mutable vector (1D array), matrix (2D array), and array (3D array) types. Their arithmetic operators are overloaded. Methods have also been written that extend the common math functions for the numeric, vector and matrix types.
 
-This part of the module provides a low-level foundation upon which the remaining parts are built upon. Key to this construction is that all mutable types introduced here are persistent in that their values can be written-to and read-from data files.
+This part of the module provides a low-level foundation upon which the remaining parts are built upon. Key to this construction is that all mutable types introduced here are persistent in that their values can be written-to and read-from data files. These files are written in a JSON (Java Script Object Notation) format, with the implied consequence that all integer values must be of type Int64 and all real values must be of type Float64.
 
 The intended purpose of mutable types is for their use in immutable data structures that contain a field or fields that may need to have the capability of changing their values during runtime. For example, a data structure that holds material properties may include a boolean field *ruptured* that would get turned on (converted from false to true) after a rupture event has occurred, thereafter allowing different values to associate with its material properties during the remaining runtime.
 
@@ -47,36 +47,43 @@ A physical tensor has a numeric quantity represented as a matrix or two-dimensio
 
 ### Writers and Readers
 
-The methods that have been created for converting into strings, and for reading and writing from and/or to a file, take advantage of the multiple dispatch capability of the Julia compiler. The chosen protocol requires that one knows the type belonging to an object to be read in before it can actually be read in. As implemented, these JSON streams do not store type information; they only store the fields of an object of specified type.
+Methods have been created for converting into strings, and for reading from and writing to a file. These methods take advantage of the multiple dispatch capability of the Julia compiler. The chosen protocol requires that one knows the type belonging to an object that is to be read in before it can actually be read in. As implemented, these JSON streams do not store type information; they only store the fields of an object of specified type, not its meta data.
 
-These methods can also handle the more common built-in types of the Julia language upon which module `PhysicalFields` is built. They are listed below.
+These methods can handle the more common built-in types of the Julia language upon which module `PhysicalFields` is built. They are listed below.
 
-#### Writing to Strings
+#### Writing Instances of Built-In Types to Strings
 
-There is a method that coverts the objects exported by this module into strings for human consumption, i.e., the method `toString.` 
+There is a method that coverts the objects exported by this module into strings for human consumption, i.e., the method `toString.` This method can also write instances of the more common built-in types of the Julia language to string, as listed below.
 
-To write to string instances of the more common built-in types of the Julia language, one can call the method
+For boolean-based types:
 ```
-function toString(y::Bool; 
-                  aligned::Bool=false)::String
-function toString(y::Integer;
-                  aligned::Bool=false)::String
-function toString(y::Real;
-                  format::Char='E',
-                  precision::Int=5,
-                  aligned::Bool=false)::String
-function toString(y::Vector{Float64};
-                  format::Char='E')::String
-function toString(y::Matrix{Float64};
-                  format::Char='E')::String
+function toString(y::Bool; aligned::Bool=false)::String
+function toString(v::Vector{Bool})::String
+function toString(m::Matrix{Bool})::String
 ```
-In the various `toString` interfaces listed above, their keywords are given default values that can be overwritten. Specifically, 
+where parameter `aligned` is set to *true*, e.g., when typesetting a matrix, as it will add a white space in front of *true* values so that column entries align, since *true* is 4 characters and *false* is 5.
+
+For integer-based types:
+```
+function toString(y::Int64; digits::Int64=0)::String
+function toString(v::Vector{Int64})::String
+function toString(m::Matrix{Int64})::String
+```
+where parameter `digits` is used, e.g., when typesetting a matrix so that all integer values span strings of length *digits*, which will produce matrix columns that align.
+
+And for real-based types:
+```
+function toString(y::Float64; format::Char='E', precision::Int=5, aligned::Bool=false)::String
+function toString(y::Vector{Float64}; format::Char='E')::String
+function toString(y::Matrix{Float64}; format::Char='E')::String
+```
+whose parameters allow assignments:
 
 * `format:` An exponential or scientific output will be written whenever `format` is set to 'e' or 'E', the latter of which is the default; otherwise, the output will be written in a fixed-point notation.
 * `precision:` The number of significant figures to be used in a numeric representation, precision ∈ {3, …, 7}, with 5 being the default, i.e., all floating point numbers are truncated to aid in their visual observation.
-* `aligned:` If `true,` a white space will appear before `true` when converting a `Bool` to string, or a white space will appear before the first digit in a number whenever its value is non-negative. Aligning is useful, e.g., when stacking outputs, like when printing out a matrix as a string. The default is `false.` 
+* `aligned:` If `true,` a white space will appear before the first digit in a number whenever its value is non-negative. Aligning is useful, e.g., when stacking outputs, like when printing out a matrix as a string. The default is `false.` 
 
-Vector and Matrix objects are aligned, with their precision being specified internally according to their size. If a vector or matrix is too large, ellipses will appear in the printed output.
+If a vector or matrix is too large, i.e., has rows that would otherwise exceed 72 characters, they will be truncated and ellipses will appear in the printed output. The arrays themselves are not altered, just their string representations.
 
 No reciprocal method for parsing a string is included, as the intention here is to provide an interface to the user at runtime.
 
@@ -88,54 +95,94 @@ To open an existing JSON file for reading, one can call
 ```
 function openJSONReader(my_dir_path::String, my_file_name::String)::IOStream
 ```
-e.g., `json_stream = openJSONReader("home/my_dir/", "my_file.json").` This reader attaches to a file located in directory `my_dir_path` whose name is `my_file_name` that is expected to end with a `.json` extension. The file is opened in read-only mode. This reader initially points to the beginning of the file.
+e.g., `json_stream = openJSONReader("home/my_dir/", "my_file.json").` 
+
+This reader attaches to a file located in directory `my_dir_path` whose name is `my_file_name` that is expected to end with a `.json` extension. The file is opened in read-only mode. This reader initially points to the beginning of the file.
 
 To create a new, or open an existing JSON file for writing, one can call
 ```
 function openJSONWriter(my_dir_path::String, my_file_name::String)::IOStream
 ```
-e.g., `json_stream = openJSONWriter("home/my_dir/", "my_file.json").` This writer attaches to a file located in directory `my_dir_path` whose name is `my_file_name` that is expected to end with a `.json` extension. If this file does not exist, it will be created. The file is opened in write-create-append mode. This writer initially points to the beginning of the file, whether it already exists or is to be newly created.
+e.g., `json_stream = openJSONWriter("home/my_dir/", "my_file.json").` 
 
-To close the file to which a JSON stream is attached, one simply calls
+This writer attaches to a file located in directory `my_dir_path` whose name is `my_file_name` that is expected to end with a `.json` extension. If this file does not exist, it will be created. The file is opened in write-create-append mode. This writer initially points to the beginning of the file, whether it already exists or is to be newly created.
+
+To close a file to which a JSON stream is attached, one simply calls
 ```
 function closeJSONStream(json_stream::IOStream)
 ```
 
-#### Reading from a JSON File
+#### Reading Instances of Built-In Types from a JSON File
 
-To read an object belonging to a built-in Julia type from a JSON file, one can call the method
+To read an object belonging to a built-in Julia type from a JSON file, one can call the method `fromFile.` 
+
+For reading in instances of the Sting type:
 ```
 function fromFile(::Type{String}, json_stream::IOStream)::String
+```
+For reading in instances of the Bool type:
+```
 function fromFile(::Type{Bool}, json_stream::IOStream)::Bool
-function fromFile(::Type{Integer}, json_stream::IOStream)::Integer
-function fromFile(::Type{Real}, json_stream::IOStream)::Real
+function fromFile(::Type{Vector{Bool}}, json_stream::IOStream)::Vector{Bool}
+```
+For reading in instances of the Int64 type:
+```
+function fromFile(::Type{Int64}, json_stream::IOStream)::Int64
+function fromFile(::Type{Vector{Int64}}, json_stream::IOStream)::Vector{Int64}
+```
+For reading in instances of the Float64 type:
+```
+function fromFile(::Type{Float64}, json_stream::IOStream)::Float64
 function fromFile(::Type{Vector{Float64}}, json_stream::IOStream)::Vector{Float64}
-function fromFile(::Type{Matrix{Float64}}, json_stream::IOStream)::Matrix{Float64}
-function fromFile(::Type{Array{Float64,3}}, json_stream::IOStream)::Array{Float64,3}
+```
+And for reading in instances of the Dict type:
+```
 function fromFile(::Type{Dict}, json_stream::IOStream)::Dict
 ```
 where its `json_steam` comes from a call to `openJSONReader.` These are the built-in types upon which module `PhysicalFields` is built.
 
-#### Writing to a JSON File
+#### Writing Instances of Built-In Types to a JSON File
 
-To write an object belonging to a Julia built-in type to a JSON file, one can call the method
+To write an object belonging to a Julia built-in type to a JSON file, one can call the method `toFile.`
+
+For writing instances of the String type:
 ```
 function toFile(y::String, json_stream::IOStream)
+```
+For writing instances of the Bool type:
+```
 function toFile(y::Bool, json_stream::IOStream)
-function toFile(y::Integer, json_stream::IOStream)
-function toFile(y::Real, json_stream::IOStream)
+function toFile(y::Vector{Bool}, json_stream::IOStream)
+```
+For writing instances of the Int64 type:
+```
+function toFile(y::Int64, json_stream::IOStream)
+function toFile(y::Vector{Int64}, json_stream::IOStream)
+```
+For writing instances of the Float64 type:
+```
+function toFile(y::Float64, json_stream::IOStream)
 function toFile(y::Vector{Float64}, json_stream::IOStream)
-function toFile(y::Matrix{Float64}, json_stream::IOStream)
-function toFile(y::Array{Float64,3}, json_stream::IOStream)
+```
+And for writing instances of the Dict type:
+```
 function toFile(y::Dict, json_stream::IOStream)
 ```
 where its `json_stream` comes from a call to `openJSONWriter.`  These are the built-in types upon which module `PhysicalFields` is built.
 
 All integer values are stored in JSON files as `Int64` objects, while all real values are stored as `Float64` objects.
 
+JSON3 does not read or write arrays whose dimensional size is greater than 1. To write, e.g., an instance of type Matrix to a JSON stream, one will need to convert it to an equivalent instance of type Vector, which can then be written to file. See, for example, the implementations for reading/writing instances of types MMatrix and MArray from/to a JSON stream as illustrations of how this can be done.
+
 [Next Page](.\README_MutableTypes.md)
 
 ## Version History
+
+### Version 1.2.5
+
+Included methods for reading and writing vector types for boolean and integer arrays from and to a JSON file, and to a string.
+
+Removed changes made in vs. 1.2.1 in favor of their earlier definitions.
 
 ### Version 1.2.1
 
