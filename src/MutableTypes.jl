@@ -11,6 +11,12 @@ while command copy(JSON3.Array) will return a mutable Vector object.
 To work with JSON files, the following set of types are exported:
     MBoolean, MInteger, MReal, MVector, MMatrix and MArray.
 Values held by these types are mutable, hence the 'M'.
+
+Note: The types MVector, MMatrix and MArray exported here are distinct from
+      those with like names exported from module StaticArrays. The arrays held
+      here by these three exported types are dynamically allocated arrays,
+      whereas those with like names exported from StaticArrays are statically
+      allocated arrays.
 =#
 
 #=
@@ -71,104 +77,107 @@ end
 
 # Exported arrays with mutable values, i.e., mutable array entries.
 
-mutable struct MVector
-    const len::Integer      # The vector's length, which is not mutable.
-    vec::Vector{Float64}    # A column vector whose entries are mutable.
+struct MVector
+    len::Int64              # A vector's length, which is fixed.
+    vec::Vector{Float64}    # A column vector with mutable elements.
 
     # constructors
 
+    function MVector(length::Int64)
+        if length > 0
+            vector = zeros(Float64, length)
+        else
+            msg = "The vector's length must be positive valued."
+            throw(ErrorException(msg))
+        end
+        new(length, vector)
+    end
+
     function MVector(vector::Vector{Float64})
-        len = length(vector)
-        new(len, vector)
+        length = convert(Int64, Base.length(vector))
+        new(length, vector)
     end
 
-    function MVector(length::Integer)
-        vec = zeros(Float64, length)
-        new(length, vec)
-    end
-
-    function MVector(length::Integer, vector::Vector{Float64})
+    function MVector(length::Int64, vector::Vector{Float64})
         if length ≠ Base.length(vector)
             msg = "The assigned length doesn't equal the vector's length."
             throw(DimensionMismatch(msg))
         end
         new(length, vector)
     end
-end
+end # MVector
 
-mutable struct MMatrix
-    const rows::Integer     # Rows in a matrix, which is not mutable.
-    const cols::Integer     # Columns in a matrix, which is not mutable.
-    vec::Vector{Float64}    # The matrix reshaped as a mutable column vector.
+struct MMatrix
+    rows::Int64             # Rows in a matrix, which is fixed.
+    cols::Int64             # Columns in a matrix, which is fixed.
+    vec::Vector{Float64}    # A matrix reshaped as a column vector with mutable elements.
 
     # constructors
 
+    function MMatrix(rows::Int64, columns::Int64)
+        if (rows > 0) && (columns > 0)
+            length = rows * columns
+            vector = zeros(Float64, length)
+        else
+            msg = "The rows and columns of a matrix must be positive valued."
+            throw(ExceptionError(msg))
+        end
+        new(rows, columns, vector)
+    end
+
     function MMatrix(matrix::Matrix{Float64})
-        (rows, cols) = size(matrix)
-        vec = Base.vec(matrix)
-        new(rows, cols, vec)
+        (rows, columns) = size(matrix)
+        vector = Base.vec(matrix)
+        new(rows, columns, vector)
     end
 
-    function MMatrix(rows::Integer, columns::Integer)
-        if (rows < 1) || (columns < 1)
-            msg = "The dimensions of a matrix must be positive."
-            throw(ErrorException(msg))
-        end
-        len = rows * columns
-        vec = zeros(Float64, len)
-        new(rows, columns, vec)
-    end
-
-    function MMatrix(rows::Integer, columns::Integer, vector::Vector{Float64})
-        if (rows < 1) || (columns < 1)
-            msg = "The dimensions of a matrix must be positive."
-            throw(ErrorException(msg))
-        end
-        if rows * columns ≠ length(vector)
-            msg = "Assigned dimensions don't equate with the vector's length."
+    function MMatrix(rows::Int64, columns::Int64, vector::Vector{Float64})
+        if rows*columns ≠ Base.length(vector)
+            msg = "Matrix size dimensions don't equate with the vector's length."
             throw(DimensionMismatch(msg))
         end
         new(rows, columns, vector)
     end
-end
+end # MMatrix
 
-mutable struct MArray
-    const pgs::Integer      # Pages in an array, which is not mutable.
+struct MArray
+    pgs::Int64              # Pages in an array, which is fixed.
                             #    Each page contains a rows×cols matrix.
-    const rows::Integer     # Matrix rows in each page, which is not mutable.
-    const cols::Integer     # Matrix columns in each page, which is not mutable.
-    vec::Vector{Float64}    # The array reshaped as a mutable column vector.
+    rows::Int64             # Matrix rows in each page, which is fixed.
+    cols::Int64             # Matrix columns in each page, which is fixed.
+    vec::Vector{Float64}    # An array reshaped as a column vector with mutable elements.
 
     # constructors
 
+    function MArray(pages::Int64, rows::Int64, columns::Int64)
+        if (pages > 0) && (rows > 0) && (columns > 0)
+            length = pages * rows * columns
+            vector = zeros(Float64, length)
+        else
+            msg = "The size dimensions of an array must be positive."
+            throw(ErrorException(msg))
+        end
+        new(pages, rows, columns, vector)
+    end
+
     function MArray(array::Array{Float64,3})
-        (pgs, rows, cols) = size(array)
-        vec = Base.vec(array)
-        new(pgs, rows, cols, vec)
+        (pages, rows, columns) = size(array)
+        vector = Base.vec(array)
+        new(pages, rows, columns, vector)
     end
 
-    function MArray(pages::Integer, rows::Integer, columns::Integer)
+    function MArray(pages::Int64, rows::Int64, columns::Int64, vector::Vector{Float64})
         if (pages < 1) || (rows < 1) || (columns < 1)
-            msg = "The dimensions of an array must be positive."
+            msg = "The size dimensions of an array must be positive."
             throw(ErrorException(msg))
         end
-        len = pages * rows * columns
-        vec = zeros(Float64, len)
-        new(pages, rows, columns, vec)
-    end
-
-    function MArray(pages::Integer, rows::Integer, columns::Integer, vector::Vector{Float64})
-        if (pages < 1) || (rows < 1) || (columns < 1)
-            msg = "The dimensions of an array must be positive."
-            throw(ErrorException(msg))
-        end
-        if pages * rows * columns ≠ length(vector)
-            msg = "Assigned dimensions don't equate with the vector's length."
+        if pages*rows*columns ≠ Base.length(vector)
+            msg = "Assigned size dimensions don't equate with the vector's length."
             throw(DimensionMismatch(msg))
         end
         new(pages, rows, columns, vector)
     end
-end
+end # MArray
 
 #=
 -------------------------------------------------------------------------------
@@ -208,27 +217,277 @@ end
 -------------------------------------------------------------------------------
 =#
 
-# Method toString for built-in types. No toString method provided for arrays.
+# Method toString for built-in boolean types.
 
 function toString(y::Bool; aligned::Bool=false)::String
-    s = string(y)
     if aligned && (y == true)
-        return string(' ', s)
+        s = " "
     else
-        return s
+        s = ""
     end
+    s *= string(y)
+    return s
 end
 
-function toString(y::Integer; aligned::Bool=false)::String
-    s = string(y)
-    if aligned && (y ≥ 0)
-        return string(' ', s)
+function toString(v::Vector{Bool})::String
+    v_len = length(v)
+    # Establish how many entries are to be printed out.
+    if v_len < 12
+        len = v_len
     else
-        return s
+        len = 12
     end
+    # Create a string representation for this vector.
+    s = string('{', toString(v[1]))
+    if len == v_len
+        for i in 2:len
+            s *= string(' ', toString(v[i]))
+        end
+    else
+        for i in 2:len-2
+            s *= string(' ', toString(v[i]))
+        end
+        s *= string(" ⋯ ", toString(v[v_len]))
+    end
+    s *= string("}ᵀ")
+    return s
 end
 
-function toString(y::Real;
+function toString(m::Matrix{Bool})::String
+    aligned = true
+    (m_rows, m_cols) = size(m)
+    # Establish how many rows are to be printed out.
+    if m_rows < 12
+        rows = m_rows
+    else
+        rows = 12
+    end
+    # Establish how many columns are to be printed out.
+    if m_cols < 12
+        cols = m_cols
+    else
+        cols = 12
+    end
+    # Create a string representation for this matrix.
+    s = ""
+    for row in 1:rows
+        if row == 1
+            s *= '⌈'
+        elseif row < rows
+            s *= '|'
+        else
+            s *= '⌊'
+        end
+        if rows == m_rows
+            s *= toString(m[row,1]; aligned)
+            for col in 2:cols-2
+                s *= string(' ', toString(m[row,col]; aligned))
+            end
+            if cols == m_cols
+                s *= string(' ', toString(m[row,cols-1]; aligned), ' ')
+            else
+                s *= " ⋯ "
+            end
+            s *= toString(m[row,m_cols]; aligned)
+        else # rows < m_rows
+            if row < rows-1
+                s *= toString(m[row,1]; aligned)
+                for col in 2:cols-2
+                    s *= string(' ', toString(m[row,col]; aligned))
+                end
+                if cols == m_cols
+                    s *= string(' ', toString(m[row,cols-1]; aligned), ' ')
+                else
+                    s *= " ⋯ "
+                end
+                s *= toString(m[row,m_cols]; aligned)
+            elseif row == rows-1
+                s *= "  ⋮  "
+                if cols == m_cols
+                    for col in 2:cols
+                        s *= "   ⋮  "
+                    end
+                else
+                    for col in 2:cols-2
+                        s *= "   ⋮  "
+                    end
+                    s *= " ⋱   ⋮  "
+                end
+            else # (m_rows > rows) && (row == m_rows)
+                s *= toString(m[m_rows,1]; aligned)
+                for col in 2:cols-2
+                    s *= string(' ', toString(m[m_rows,col]; aligned))
+                end
+                if cols == m_cols
+                    s *= string(' ', toString(m[m_rows,cols-1]; aligned), ' ')
+                else
+                    s *= " ⋯ "
+                end
+                s *= toString(m[m_rows,m_cols]; aligned)
+            end
+        end
+        if row == 1
+            s *= '⌉'
+        elseif row < rows
+            s *= '|'
+        else
+            s *= '⌋'
+        end
+        if row < rows
+            s *= "\n"
+        end
+    end
+    return s
+end
+
+# Method toString for built-in 64-bit integer types.
+
+function toString(y::Int64; digits::Int64=0)::String
+    y_digits = ndigits(y)
+    if y < 0
+        y_digits += 1
+    end
+    s = ""
+    for i in y_digits+1:digits
+        s *= string(' ')
+    end
+    s *= @sprintf "%i" y;
+    return s
+end
+
+function toString(v::Vector{Int64})::String
+    v_len = length(v)
+    # Establish how many entries are to be printed out.
+    digits = 0
+    is_neg = false
+    for i in 1:v_len
+        digits = max(digits, ndigits(v[i]))
+        if !is_neg && (v[i] < 0)
+            is_neg = true
+        end
+    end
+    if !is_neg
+        len = min(v_len, 72÷(digits+1))
+    else
+        len = min(v_len, 72÷(digits+2))
+    end
+    # Create a string representation for this vector.
+    s = string('{', toString(v[1]))
+    if len == v_len
+        for i in 2:len
+            s *= string(' ', toString(v[i]))
+        end
+    else
+        for i in 2:len-2
+            s *= string(' ', toString(v[i]))
+        end
+        s *= string(" ⋯ ", toString(v[v_len]))
+    end
+    s *= string("}ᵀ")
+    return s
+end
+
+function toString(m::Matrix{Int64})::String
+    (m_rows, m_cols) = size(m)
+    # Determine the number of rows and columns to print out.
+    digits = 0
+    is_neg = false
+    for row in 1:m_rows
+        for col in 1:m_cols
+            digits = max(digits, ndigits(m[row,col]))
+            if !is_neg && (m[row,col] < 0)
+                is_neg = true
+            end
+        end
+    end
+    if !is_neg
+        cols = min(m_cols, 72÷(digits+1))
+    else
+        cols = min(m_cols, 72÷(digits+2))
+    end
+    rows = min(m_rows, cols)
+    # Create a string representation for this matrix.
+    s = ""
+    for row in 1:rows
+        if row == 1
+            s *= '⌈'
+        elseif row < rows
+            s *= '|'
+        else
+            s *= '⌊'
+        end
+        if rows == m_rows
+            s *= toString(m[row,1]; digits)
+            for col in 2:cols-2
+                s *= string(' ', toString(m[row,col]; digits))
+            end
+            if cols == m_cols
+                s *= string(' ', toString(m[row,cols-1]; digits), ' ')
+            else
+                s *= " ⋯ "
+            end
+            s *= toString(m[row,m_cols]; digits)
+        else # rows < m_rows
+            if row < rows-1
+                s *= toString(m[row,1]; digits)
+                for col in 2:cols-2
+                    s *= string(' ', toString(m[row,col]; digits))
+                end
+                if cols == m_cols
+                    s *= string(' ', toString(m[row,cols-1]; digits), ' ')
+                else
+                    s *= " ⋯ "
+                end
+                s *= toString(m[row,m_cols]; digits)
+            elseif row == rows-1
+                # Create the ellipses string for specified integer digits.
+                # The first ellipses.
+                s1 = ""
+                for i in 1:digits-1
+                    s1 *= ' '
+                end
+                s1 *= "⋮"
+                # Create this row of ellipses.
+                s *= s1
+                for col in 2:cols-2
+                    s *= string(' ', s1)
+                end
+                if cols == m_cols
+                    s *= string(' ', s1, ' ')
+                else
+                    s *= " ⋱ "
+                end
+                s *= s1
+            else # (m_rows > rows) && (row == m_rows)
+                s *= toString(m[m_rows,1]; digits)
+                for col in 2:cols-2
+                    s *= string(' ', toString(m[m_rows,col]; digits))
+                end
+                if cols == m_cols
+                    s *= string(' ', toString(m[m_rows,cols-1]; digits), ' ')
+                else
+                    s *= " ⋯ "
+                end
+                s *= toString(m[m_rows,m_cols]; digits)
+            end
+        end
+        if row == 1
+            s *= '⌉'
+        elseif row < rows
+            s *= '|'
+        else
+            s *= '⌋'
+        end
+        if row < rows
+            s *= "\n"
+        end
+    end
+    return s
+end
+
+# Method toString for built-in 64-bit floating point number types.
+
+function toString(y::Float64;
                   format::Char='E',
                   precision::Int=5,
                   aligned::Bool=false)::String
@@ -271,7 +530,9 @@ function toString(y::Real;
             end
         end
     elseif isnan(y)
-        if format == 'e' || format == 'E'
+        if !aligned
+            s = "NaN"
+        elseif format == 'e' || format == 'E'
             if precision == 7
                 s = "NaN         "
             elseif precision == 6
@@ -297,70 +558,99 @@ function toString(y::Real;
             end
         end
     elseif isinf(y)
-        if format == 'e' || format == 'E'
-            if precision == 7
-                s = "Inf         "
-            elseif precision == 6
-                s = "Inf        "
-            elseif precision == 5
-                s = "Inf       "
-            elseif precision == 4
-                s = "Inf      "
-            else
-                s = "Inf     "
+        if y > 0.0
+            if !aligned
+                s = "Inf"
+            elseif format == 'e' || format == 'E'
+                if precision == 7
+                    s = "Inf         "
+                elseif precision == 6
+                    s = "Inf        "
+                elseif precision == 5
+                    s = "Inf       "
+                elseif precision == 4
+                    s = "Inf      "
+                else
+                    s = "Inf     "
+                end
+            else # format = 'f' or 'F'
+                if precision == 7
+                    s = "Inf     "
+                elseif precision == 6
+                    s = "Inf    "
+                elseif precision == 5
+                    s = "Inf   "
+                elseif precision == 4
+                    s = "Inf  "
+                else
+                    s = "Inf "
+                end
             end
-        else # format = 'f' or 'F'
-            if precision == 7
-                s = "Inf     "
-            elseif precision == 6
-                s = "Inf    "
-            elseif precision == 5
-                s = "Inf   "
-            elseif precision == 4
-                s = "Inf  "
-            else
-                s = "Inf "
+        else
+            if !aligned
+                s = "-Inf"
+            elseif format == 'e' || format == 'E'
+                if precision == 7
+                    s = "-Inf        "
+                elseif precision == 6
+                    s = "-Inf       "
+                elseif precision == 5
+                    s = "-Inf      "
+                elseif precision == 4
+                    s = "-Inf     "
+                else
+                    s = "-Inf    "
+                end
+            else # format = 'f' or 'F'
+                if precision == 7
+                    s = "-Inf    "
+                elseif precision == 6
+                    s = "-Inf   "
+                elseif precision == 5
+                    s = "-Inf  "
+                elseif precision == 4
+                    s = "-Inf "
+                else
+                    s = "-Inf"
+                end
             end
-        end
-        if y < 0.0
-            s = string("-", s)
         end
     else
         if format == 'e'
             if precision == 7
-                s = @sprintf "%0.6e" y;
+                s = @sprintf "%.6e" y;
             elseif precision == 6
-                s = @sprintf "%0.5e" y;
+                s = @sprintf "%.5e" y;
             elseif precision == 5
-                s = @sprintf "%0.4e" y;
+                s = @sprintf "%.4e" y;
             elseif precision == 4
-                s = @sprintf "%0.3e" y;
+                s = @sprintf "%.3e" y;
             else
-                s = @sprintf "%0.2e" y;
+                s = @sprintf "%.2e" y;
             end
         elseif format == 'E'
             if precision == 7
-                s = @sprintf "%0.6E" y;
+                s = @sprintf "%.6E" y;
             elseif precision == 6
-                s = @sprintf "%0.5E" y;
+                s = @sprintf "%.5E" y;
             elseif precision == 5
-                s = @sprintf "%0.4E" y;
+                s = @sprintf "%.4E" y;
             elseif precision == 4
-                s = @sprintf "%0.3E" y;
+                s = @sprintf "%.3E" y;
             else
-                s = @sprintf "%0.2E" y;
+                s = @sprintf "%.2E" y;
             end
         else  # format = 'f' or 'F'
             if precision == 7
-                s = @sprintf "%0.6f" y;
+                s = @sprintf "%.6f" y;
             elseif precision == 6
-                s = @sprintf "%0.5f" y;
+                s = @sprintf "%.5f" y;
             elseif precision == 5
-                s = @sprintf "%0.4f" y;
+                s = @sprintf "%.4f" y;
             elseif precision == 4
-                s = @sprintf "%0.3f" y;
+                s = @sprintf "%.3f" y;
             else
-                s = @sprintf "%0.2f" y;
+                s = @sprintf "%.2f" y;
             end
         end
     end
@@ -370,28 +660,9 @@ function toString(y::Real;
     return s
 end
 
-# Method toString for mutable number types.
-
-function toString(y::MBoolean; aligned::Bool=false)::String
-    return toString(y.b; aligned)
-end
-
-function toString(y::MInteger; aligned::Bool=false)::String
-    return toString(y.n; aligned)
-end
-
-function toString(y::MReal;
-                  format::Char='E',
-                  precision::Int=5,
-                  aligned::Bool=false)::String
-    return toString(y.n; format, precision, aligned)
-end
-
-# Method toString for mutable array types.
-
 function _VtoStringE(v::Vector{Float64}; format::Char)::String
     len = length(v)
-    aligned = true
+    aligned = false
     if len < 6
         precision = 5
     elseif len == 6
@@ -417,7 +688,7 @@ end
 function _VtoStringF(v::Vector{Float64})::String
     len = length(v)
     format = 'F'
-    aligned = true
+    aligned = false
     if len < 9
         precision = 5
     elseif len == 9
@@ -440,32 +711,11 @@ function _VtoStringF(v::Vector{Float64})::String
     return s
 end
 
-function toString(v::Vector{Any}; format::Char='E')::String
-    len = length(v)
-    vec = Vector{Float64}(undef, len)
-    for i in 1:len
-        vec[i] = convert(Float64, v[i])
-    end
-    if format == 'e' || format == 'E'
-        return _VtoStringE(vec; format)
-    else
-        return _VtoStringF(vec)
-    end
-end
-
 function toString(v::Vector{Float64}; format::Char='E')::String
     if (format == 'e') || (format == 'E')
         return _VtoStringE(v; format)
     else
         return _VtoStringF(v)
-    end
-end
-
-function toString(mv::MVector; format::Char='E')::String
-    if (format == 'e') || (format == 'E')
-        return _VtoStringE(mv.vec; format)
-    else
-        return _VtoStringF(mv.vec)
     end
 end
 
@@ -644,26 +894,44 @@ function _MtoStringF(m::Matrix{Float64})::String
     return s
 end
 
-function toString(m::Matrix{Any}; format::Char='E')::String
-    (rows, cols) = size(m)
-    mtx = Matrix{Float64}(undef, rows, cols)
-    for i in 1:rows
-        for j in 1:cols
-            mtx[i,j] = convert(Float64, m[i,j])
-        end
-    end
-    if format == 'e' || format == 'E'
-        return _MtoStringE(mtx; format)
-    else
-        return _MtoStringF(mtx)
-    end
-end
-
 function toString(m::Matrix{Float64}; format::Char='E')::String
     if format == 'e' || format == 'E'
         return _MtoStringE(m; format)
     else
         return _MtoStringF(m)
+    end
+end
+
+# Method toString does not exist for arrays in three dimensions or higher.
+
+#=
+-------------------------------------------------------------------------------
+=#
+
+# Method toString for the mutable number types.
+
+function toString(y::MBoolean; aligned::Bool=false)::String
+    return toString(y.b; aligned)
+end
+
+function toString(y::MInteger; digits::Int64=0)::String
+    return toString(y.n; digits)
+end
+
+function toString(y::MReal;
+                  format::Char='E',
+                  precision::Int=5,
+                  aligned::Bool=false)::String
+    return toString(y.n; format, precision, aligned)
+end
+
+# Method toString for mutable array types.
+
+function toString(mv::MVector; format::Char='E')::String
+    if (format == 'e') || (format == 'E')
+        return _VtoStringE(mv.vec; format)
+    else
+        return _VtoStringF(mv.vec)
     end
 end
 
@@ -914,13 +1182,13 @@ StructTypes.StructType(::Type{MBoolean}) = StructTypes.Mutable()
 
 StructTypes.StructType(::Type{MInteger}) = StructTypes.Mutable()
 
-StructTypes.StructType(::Type{MReal}) = StructTypes.Mutable()
+StructTypes.StructType(::Type{MReal})    = StructTypes.Mutable()
 
-StructTypes.StructType(::Type{MVector}) = StructTypes.Struct()
+StructTypes.StructType(::Type{MVector})  = StructTypes.Struct()
 
-StructTypes.StructType(::Type{MMatrix}) = StructTypes.Struct()
+StructTypes.StructType(::Type{MMatrix})  = StructTypes.Struct()
 
-StructTypes.StructType(::Type{MArray}) = StructTypes.Struct()
+StructTypes.StructType(::Type{MArray})   = StructTypes.Struct()
 
 #=
 -------------------------------------------------------------------------------
@@ -952,9 +1220,33 @@ function toFile(y::Bool, json_stream::IOStream)
     return nothing
 end
 
+function toFile(y::Int64, json_stream::IOStream)
+    if isopen(json_stream)
+        JSON3.write(json_stream, y)
+        write(json_stream, '\n')
+    else
+        msg = "The supplied JSON stream is not open."
+        throw(ErrorException(msg))
+    end
+    flush(json_stream)
+    return nothing
+end
+
 function toFile(y::Integer, json_stream::IOStream)
     if isopen(json_stream)
         JSON3.write(json_stream, convert(Int64, y))
+        write(json_stream, '\n')
+    else
+        msg = "The supplied JSON stream is not open."
+        throw(ErrorException(msg))
+    end
+    flush(json_stream)
+    return nothing
+end
+
+function toFile(y::Float64, json_stream::IOStream)
+    if isopen(json_stream)
+        JSON3.write(json_stream, y)
         write(json_stream, '\n')
     else
         msg = "The supplied JSON stream is not open."
@@ -976,9 +1268,67 @@ function toFile(y::Real, json_stream::IOStream)
     return nothing
 end
 
+function toFile(y::Vector{Bool}, json_stream::IOStream)
+    if isopen(json_stream)
+        JSON3.write(json_stream, y)
+        write(json_stream, '\n')
+    else
+        msg = "The supplied JSON stream is not open."
+        throw(ErrorException(msg))
+    end
+    flush(json_stream)
+    return nothing
+end
+
+function toFile(y::Vector{Int64}, json_stream::IOStream)
+    if isopen(json_stream)
+        JSON3.write(json_stream, y)
+        write(json_stream, '\n')
+    else
+        msg = "The supplied JSON stream is not open."
+        throw(ErrorException(msg))
+    end
+    flush(json_stream)
+    return nothing
+end
+
+function toFile(y::Vector{Integer}, json_stream::IOStream)
+    if isopen(json_stream)
+        len = length(y)
+        vec = Vector{Int64}(undef, len)
+        for i in 1:len
+            vec[i] = convert(Int64, y[i])
+        end
+        JSON3.write(json_stream, vec)
+        write(json_stream, '\n')
+    else
+        msg = "The supplied JSON stream is not open."
+        throw(ErrorException(msg))
+    end
+    flush(json_stream)
+    return nothing
+end
+
 function toFile(y::Vector{Float64}, json_stream::IOStream)
     if isopen(json_stream)
         JSON3.write(json_stream, y)
+        write(json_stream, '\n')
+    else
+        msg = "The supplied JSON stream is not open."
+        throw(ErrorException(msg))
+    end
+    flush(json_stream)
+    return nothing
+end
+
+function toFile(y::Vector{Real}, json_stream::IOStream)
+    if isopen(json_stream)
+        len = length(y)
+        vec = Vector{Float64}(undef, len)
+        for i in 1:len
+            vec[i] = convert(Float64, y[i])
+        end
+        JSON3.write(json_stream, vec)
         write(json_stream, '\n')
     else
         msg = "The supplied JSON stream is not open."
@@ -1052,17 +1402,6 @@ function toFile(y::MVector, json_stream::IOStream)
     return nothing
 end
 
-function toFile(y::Vector{Any}, json_stream::IOStream)
-    len = length(y)
-    v = Vector{Float64}(undef, len)
-    for i in 1:len
-        v[i] = convert(Float64, y[i])
-    end
-    vec = MVector(len, v)
-    toFile(vec, json_stream)
-    return nothing
-end
-
 function toFile(y::MMatrix, json_stream::IOStream)
     if isopen(json_stream)
         JSON3.write(json_stream, y)
@@ -1075,26 +1414,6 @@ function toFile(y::MMatrix, json_stream::IOStream)
     return nothing
 end
 
-function toFile(y::Matrix{Float64}, json_stream::IOStream)
-    (rows, cols) = size(y)
-    mtx = MMatrix(rows, cols, vec(y))
-    toFile(mtx, json_stream)
-    return nothing
-end
-
-function toFile(y::Matrix{Any}, json_stream::IOStream)
-    (rows, cols) = size(y)
-    m = Matrix{Float64}(undef, rows, cols)
-    for i in 1:rows
-        for j in 1:cols
-            m[i,j] = convert(Float64, y[i,j])
-        end
-    end
-    mtx = MMatrix(rows, cols, vec(m))
-    toFile(mtx, json_stream)
-    return nothing
-end
-
 function toFile(y::MArray, json_stream::IOStream)
     if isopen(json_stream)
         JSON3.write(json_stream, y)
@@ -1104,28 +1423,6 @@ function toFile(y::MArray, json_stream::IOStream)
         throw(ErrorException(msg))
     end
     flush(json_stream)
-    return nothing
-end
-
-function toFile(y::Array{Float64,3}, json_stream::IOStream)
-    (pgs, rows, cols) = size(y)
-    arr = MArray(pgs, rows, cols, vec(y))
-    toFile(arr, json_stream)
-    return nothing
-end
-
-function toFile(y::Array{Any,3}, json_stream::IOStream)
-    (pgs, rows, cols) = size(y)
-    a = Array{Float64,3}(undef, pgs, rows, cols)
-    for i in 1:pgs
-        for j in 1:rows
-            for k in 1:cols
-                a[i,j,k] = convert(Float64, y[i,j,k])
-            end
-        end
-    end
-    arr = MArray(pgs, rows, cols, vec(a))
-    toFile(arr, json_stream)
     return nothing
 end
 
@@ -1151,7 +1448,7 @@ function fromFile(::Type{Bool}, json_stream::IOStream)::Bool
     return y
 end
 
-function fromFile(::Type{Integer}, json_stream::IOStream)::Integer
+function fromFile(::Type{Int64}, json_stream::IOStream)::Int64
     if isopen(json_stream)
         y = JSON3.read(readline(json_stream), Int64)
     else
@@ -1161,7 +1458,7 @@ function fromFile(::Type{Integer}, json_stream::IOStream)::Integer
     return y
 end
 
-function fromFile(::Type{Real}, json_stream::IOStream)::Real
+function fromFile(::Type{Float64}, json_stream::IOStream)::Float64
     if isopen(json_stream)
         y = JSON3.read(readline(json_stream), Float64)
     else
@@ -1169,6 +1466,28 @@ function fromFile(::Type{Real}, json_stream::IOStream)::Real
         throw(ErrorException(msg))
     end
     return y
+end
+
+function fromFile(::Type{Vector{Bool}}, json_stream::IOStream)::Vector{Bool}
+    if isopen(json_stream)
+        y = JSON3.read(readline(json_stream), Vector{Bool})
+    else
+        msg = "The supplied JSON stream is not open."
+        throw(ErrorException(msg))
+    end
+    # y is an immutable array. copy(y) returns y as a mutable array.
+    return copy(y)
+end
+
+function fromFile(::Type{Vector{Int64}}, json_stream::IOStream)::Vector{Int64}
+    if isopen(json_stream)
+        y = JSON3.read(readline(json_stream), Vector{Int64})
+    else
+        msg = "The supplied JSON stream is not open."
+        throw(ErrorException(msg))
+    end
+    # y is an immutable array. copy(y) returns y as a mutable array.
+    return copy(y)
 end
 
 function fromFile(::Type{Vector{Float64}}, json_stream::IOStream)::Vector{Float64}
@@ -1245,31 +1564,9 @@ function fromFile(::Type{MMatrix}, json_stream::IOStream)::MMatrix
     return y
 end
 
-function fromFile(::Type{Matrix{Float64}}, json_stream::IOStream)::Matrix{Float64}
-    if isopen(json_stream)
-        mtx = JSON3.read(readline(json_stream), MMatrix)
-        y   = Matrix(mtx)
-    else
-        msg = "The supplied JSON stream is not open."
-        throw(ErrorException(msg))
-    end
-    return y
-end
-
 function fromFile(::Type{MArray}, json_stream::IOStream)::MArray
     if isopen(json_stream)
         y = JSON3.read(readline(json_stream), MArray)
-    else
-        msg = "The supplied JSON stream is not open."
-        throw(ErrorException(msg))
-    end
-    return y
-end
-
-function fromFile(::Type{Array{Float64,3}}, json_stream::IOStream)::Array{Float64,3}
-    if isopen(json_stream)
-        arr = JSON3.read(readline(json_stream), MArray)
-        y   = Array(arr)
     else
         msg = "The supplied JSON stream is not open."
         throw(ErrorException(msg))
@@ -2816,14 +3113,14 @@ function qr(y::Matrix{Float64})::Tuple  # (Q, R) as instances of Matrix
     Q, R = F
     # Unpack Q and R.
     (rows, cols) = size(Q)
-    q = Matrix(undef, rows, cols)
+    q = Matrix{Float64}(undef, rows, cols)
     for i in 1:rows
         for j in 1:cols
             q[i,j] = Q[i,j]
         end
     end
     (rows, cols) = size(R)
-    r = Matrix(undef, rows, cols)
+    r = Matrix{Float64}(undef, rows, cols)
     for i in 1:rows
         for j in 1:cols
             r[i,j] = R[i,j]
@@ -2843,14 +3140,14 @@ function lq(y::Matrix{Float64})::Tuple  # (L, Q) as instances of Matrix
     L, Q = S
     # Unpack L and Q.
     (rows, cols) = size(L)
-    l = Matrix(undef, rows, cols)
+    l = Matrix{Float64}(undef, rows, cols)
     for i in 1:rows
         for j in 1:cols
             l[i,j] = L[i,j]
         end
     end
     (rows, cols) = size(Q)
-    q = Matrix(undef, rows, cols)
+    q = Matrix{Float64}(undef, rows, cols)
     for i in 1:rows
         for j in 1:cols
             q[i,j] = Q[i,j]
