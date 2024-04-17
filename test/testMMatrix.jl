@@ -166,36 +166,32 @@ function run(at_dir::String)
     println()
     my_dir_path = string(at_dir, "/test/files/")
     json_stream = openJSONWriter(my_dir_path, "testMMatrix.json")
-    toFile(Qᴸ, json_stream)
     toFile(c, json_stream)
     close(json_stream)
     json_stream = openJSONReader(my_dir_path, "testMMatrix.json")
-    r₁ = fromFile(Matrix{Float64}, json_stream)
-    println("An instance of type Matrix.")
-    println("   It should read as: ")
-    println(toString(Qᴸ))
-    println("   It reads as:")
-    println(toString(r₁))
-    r₂ = fromFile(MMatrix, json_stream)
+    r = fromFile(MMatrix, json_stream)
     println("An instance of type MMatrix.")
     println("   It should read as:")
     println(toString(c))
     println("   It reads as:")
-    println(toString(r₂))
+    println(toString(r))
     close(json_stream)
     println()
     println("To verify that a read-in matrix is mutable,")
     println("reassign matrix")
-    println(toString(r₁))
-    println("so that it reads")
-    println(toString(r₂))
+    println(toString(r))
+    println("so that it reads as the identity matrix")
     for i in 1:3
         for j in 1:3
-            r₁[i,j] = r₂[i,j]
+            if i == j
+                r[i,j] = 1.0
+            else
+                r[i,j] = 0.0
+            end
         end
     end
     println("It now reads as:")
-    println(toString(r₁))
+    println(toString(r))
     println()
     println("If these answers make sense, then this test passes.")
     return nothing
