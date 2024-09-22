@@ -42,13 +42,13 @@ To write a system of units to a JSON file, one can call
 ```
 function toFile(y::PhysicalUnits, json_stream::IOStream)
 ```
-where argument `json_stream` comes from a call to `openJSONWriter` discussed in [README.md](.\README.md).
+where argument `json_stream` comes from a call to `openJSONWriter` discussed [here](.\README_Persistence.md).
 
 To read a system of units from a JSON file, one can call
 ```
 function fromFile(::Type{PhysicalUnits}, json_stream::IOStream)::PhysicalUnits
 ```
-where argument `json_stream` comes from a call to `openJSONReader` discussed in [README.md](.\README.md).
+where argument `json_stream` comes from a call to `openJSONReader` discussed [here](.\README_Persistence.md).
 
 ## Predefined Sets of Physical Units
 
@@ -157,14 +157,9 @@ When multiplying two physical fields the exponents of their units will add, whil
 
 ### Methods
 
-A method that makes shallow copies of unit types.
+A method that makes copies of unit types.
 ```
 function Base.:(copy)(y::PhysicalUnits)::PhysicalUnits
-```
-
-A method that makes deep copies of unit types.
-```
-function Base.:(deepcopy)(y::PhysicalUnits)::PhysicalUnits
 ```
 
 #### Type Testing
@@ -184,7 +179,7 @@ Test a set of physical units `y` to determine if they are CGS units.
 function isCGS(y::PhysicalUnits)::Bool
 ```
 
-Test two sets of units `y` and `z` to determine if they represent the same physical unit, but possibly from a different systems of units.
+Test two sets of units `y` and `z` to determine if they represent the same physical unit, but possibly from two different systems of units.
 ```
 function areEquivalent(y::PhysicalUnits, z::PhysicalUnits)::Bool
 ```
@@ -198,12 +193,10 @@ Types `PhysicalScalar,` `PhysicalVector` and `PhysicalTensor,` also defined in t
 
 I wrote this package for personal consumption, unbeknownst at the time of an existing package [Unitful.jl](https://github.com/PainterQubits/Unitful.jl), which is quite advanced and well supported. Even so, there remains value in the implementation of type `PhysicalUnits,` as they are fields in my physical types (`PhysicalScalar,` `PhysicalVector` and `PhysicalTensor`) where units are handled ubiquitously, behind the scene, in scalar, vector and tensor operations.
 
-Over the years I've written similar packages in different languages. This is by far the most elaborate implementation that I've written. When I was a student, I was taught to check my solutions by first checking their units. Existing scientific software has been wanting in this regard; hence, my creation of this capability here. 
+Over the years I've written similar packages in different languages. This is by far the most elaborate implementation that I've written. When I was a student, I was taught to check my solutions by first checking their units. Existing scientific software has been wanting in this regard over my entire career; hence, my creation of this capability here. 
 
 [Home Page](.\README.md)
-
-[Previous Page](.\README_MutableTypes.md)
-
+[Prev Page](.\README_MutableTypes.md)
 [Next Page](.\README_PhysicalScalars.md)
 
 

@@ -28,14 +28,14 @@ where all entries in the array have the same physical units. These array entries
 
 ## Constructors
 
-There are two kinds of internal constructors. The first constructor assigns zero(s) to its field, while the other constructors assigns value(s) to this field.
+There are two kinds of internal constructors. The first constructor assigns zero(s) to its field, while the other constructors assign value(s) to this field.
 
 ### PhysicalScalar
 
 Constructors
 ```
 function PhysicalScalar(units::PhysicalUnits)
-function PhysicalScalar(value::Number, units::PhysicalUnits)
+function PhysicalScalar(value::Real, units::PhysicalUnits)
 ```
 These constructors will return a new scalar object whose physical units are specified by argument `units.` The first constructor assigns a numeric value of zero to the scalar field, while the second constructor assigns to it the numeric value specified by argument `value.`
 
@@ -44,7 +44,7 @@ These constructors will return a new scalar object whose physical units are spec
 Constructors
 ```
 function ArrayOfPhysicalScalars(array_length::Integer, units::PhysicalUnits)
-function ArrayOfPhysicalScalars(scalar_values::Vector{Float64}, units::PhysicalUnits)
+function ArrayOfPhysicalScalars(scalar_values::Vector{<:Real}, units::PhysicalUnits)
 function ArrayOfPhysicalScalars(scalar_values::MVector, units::PhysicalUnits)
 ```
 These constructors will return a new array of scalars whose length is specified by argument `array_length,` wherein all elements of the array will have physical units specified by argument `units.` The first constructor creates an array with zero values, while the remaining constructors assign values to this internal array, as supplied by the vector argument `scalar_values,` which is an array of dimension `array_length.`
@@ -55,42 +55,33 @@ These constructors will return a new array of scalars whose length is specified 
 These functions are to be used to retrieve and assign `Real` values from/to a `PhysicalScalar.`
 
 ```
-function Base.:(get)(y::PhysicalScalar)::Real
+function get(y::PhysicalScalar)::Real
 function set!(y::PhysicalScalar, x::Real)
 ```
 
 While these functions are to be used to retrieve and assign a `PhysicalScalar` from/to an `ArrayOfPhysicalScalars.`
 
 ```
-function Base.:(getindex)(y::ArrayOfPhysicalScalars, index::Integer)::PhysicalScalar
-function Base.:(setindex!)(y::ArrayOfPhysicalScalars, scalar::PhysicalScalar, index::Integer)
+function getindex(y::ArrayOfPhysicalScalars, index::Integer)::PhysicalScalar
+function setindex!(y::ArrayOfPhysicalScalars, scalar::PhysicalScalar, index::Integer)
 ```
 
 Because these extend the `Base` functions `getindex` and `setindex!`, the bracket notation `[]` can be used to retrieve and assign individual scalar fields belonging to an instance of `ArrayOfPhysicalScalars.`
 
 ## Copy
 
-For making shallow copies, use
+For making a copy, use
 ```
-function Base.:(copy)(y::PhysicalScalar)::PhysicalScalar
-function Base.:(copy)(y::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
-```
-and for making deep copies, use
-```
-function Base.:(deepcopy)(y::PhysicalScalar)::PhysicalScalar
-function Base.:(deepcopy)(y::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
+function copy(y::PhysicalScalar)::PhysicalScalar
+function copy(y::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
 ```
 
 ## Readers and Writers
 
 Conversion of a scalar field into a string is provided for by the method
 ```
-function toString(y::PhysicalScalar;
-                  format::Char='E',
-                  precision::Int=5,
-                  aligned::Bool=false)::String
+function toString(y::PhysicalScalar)::String
 ```
-where the keyword `format` is a character that, whenever its value is 'E' or 'e', represents the scalar in a scientific notation; otherwise, it will be represented in a fixed-point notation. Keyword `precision` specifies the number of significant digits to be represented in the string, which can accept values from the set \{3…7\}. Keyword `aligned,` when set to `true,` will add a white space in front of any non-negative scalar string representation, e.g., this could be useful when printing out a matrix of scalars; otherwise, there is no leading white space in its string representation, which is the default.
 
 No parser is provided here.
 
@@ -106,7 +97,7 @@ To read a scalar or an array of scalars from a JSON file, one can call
 function fromFile(::Type{PhysicalScalar}, json_stream::IOStream)::PhysicalScalar
 function fromFile(::Type{ArrayOfPhysicalScalars}, json_stream::IOStream)::ArrayOfPhysicalScalars
 ```
-where argument `json_stream` comes from a call to `openJSONReader` found in [README.md](.\README.md).
+where argument `json_stream` comes from a call to `openJSONReader` found [here](.\README_Persistence.md).
 
 ## Type Conversions
 
@@ -159,51 +150,46 @@ The overloaded binary operators include: `+`, `-`, `*`, `/` and `^`.
 The following methods are math functions that return a physical scalar and can handle arguments that are scalars with physical dimensions.
 
 ```
-function Base.:(abs)(s::PhysicalScalar)::PhysicalScalar
-function Base.:(round)(y::PhysicalScalar)::PhysicalScalar
-function Base.:(ceil)(y::PhysicalScalar)::PhysicalScalar
-function Base.:(floor)(y::PhysicalScalar)::PhysicalScalar
-function Base.:(sqrt)(y::PhysicalScalar)::PhysicalScalar
+function abs(s::PhysicalScalar)::PhysicalScalar
+function round(y::PhysicalScalar)::PhysicalScalar
+function ceil(y::PhysicalScalar)::PhysicalScalar
+function floor(y::PhysicalScalar)::PhysicalScalar
+function sqrt(y::PhysicalScalar)::PhysicalScalar
 ```
 where taking the square root of a scalar requires the powers of its physical units be exactly divisible by 2.
 
 The following methods are math functions that return a real number whose arguments are physical scalars.
-
 ```
-function Base.:(sign)(y::PhysicalScalar)::Real
-function Base.:(atan)(y::PhysicalScalar, x::PhysicalScalar)::Real
+function sign(y::PhysicalScalar)::Real
+function atan(y::PhysicalScalar, x::PhysicalScalar)::Real
 ```
-
 provided that the rise `y` has the same physical units as the run `x`.
 
 The following methods are math functions that return a real number whose scalar argument is dimensionless.
-
 ```
-function Base.:(sin)(y::PhysicalScalar)::Real
-function Base.:(cos)(y::PhysicalScalar)::Real
-function Base.:(tan)(y::PhysicalScalar)::Real
-function Base.:(asin)(y::PhysicalScalar)::Real
-function Base.:(acos)(y::PhysicalScalar)::Real
-function Base.:(atan)(y::PhysicalScalar)::Real
-function Base.:(sinh)(y::PhysicalScalar)::Real
-function Base.:(cosh)(y::PhysicalScalar)::Real
-function Base.:(tanh)(y::PhysicalScalar)::Real
-function Base.:(asinh)(y::PhysicalScalar)::Real
-function Base.:(acosh)(y::PhysicalScalar)::Real
-function Base.:(atanh)(y::PhysicalScalar)::Real
-function Base.:(log)(y::PhysicalScalar)::Real
-function Base.:(log2)(y::PhysicalScalar)::Real
-function Base.:(log10)(y::PhysicalScalar)::Real
-function Base.:(exp)(y::PhysicalScalar)::Real
-function Base.:(exp2)(y::PhysicalScalar)::Real
-function Base.:(exp10)(y::PhysicalScalar)::Real
+function sin(y::PhysicalScalar)::Real
+function cos(y::PhysicalScalar)::Real
+function tan(y::PhysicalScalar)::Real
+function asin(y::PhysicalScalar)::Real
+function acos(y::PhysicalScalar)::Real
+function atan(y::PhysicalScalar)::Real
+function sinh(y::PhysicalScalar)::Real
+function cosh(y::PhysicalScalar)::Real
+function tanh(y::PhysicalScalar)::Real
+function asinh(y::PhysicalScalar)::Real
+function acosh(y::PhysicalScalar)::Real
+function atanh(y::PhysicalScalar)::Real
+function log(y::PhysicalScalar)::Real
+function log2(y::PhysicalScalar)::Real
+function log10(y::PhysicalScalar)::Real
+function exp(y::PhysicalScalar)::Real
+function exp2(y::PhysicalScalar)::Real
+function exp10(y::PhysicalScalar)::Real
 ```
-These are the same functions that have been extended for mutable numbers found on page [Mutable Types](.\README_MutableTypes.md).
+These are the same functions that have been extended for mutable numbers found [here](.\README_MutableTypes.md).
 
 [Home Page](.\README.md)
-
-[Previous Page](.\README_PhysicalUnits.md)
-
+[Prev Page](.\README_PhysicalUnits.md)
 [Next Page](.\README_PhysicalVectors.md)
 
 

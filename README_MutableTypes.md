@@ -3,11 +3,9 @@
 
 # MutableTypes
 
-This part of the package provides mutable boolean, integer and real types, plus mutable 1D vector, 2D matrix, and 3D array types. Their arithmetic and indexing operators are overloaded. The package also exports wrappers for the more common math functions.
+This part of the package provides mutable boolean, integer and real types, plus mutable 1D vector, 2D matrix, and 3D array types. Their arithmetic and indexing operators are overloaded. The package also exports wrappers for the more common math functions. These mutable types form a foundation upon which all other types exported by this module are built upon.
 
-These mutable types form the foundation upon which all other types exported by this module are built upon. Persistence (the ability to be written-to and read-from a file) is considered a necessary property for `PhysicalField` objects to have, and all of the mutable types introduced here are persistent.
-
-The intent of these mutable types is for their use in immutable data structures that contain a field or fields that need the capability to have their values changed during a runtime. For example, a data structure that holds material properties may include a boolean field *ruptured* that would get turned on (converted from false to true) after a rupture event has occurred, thereafter enabling a change in material properties to occur moving forward.
+The intent of mutable types is for their use in immutable data structures that contain a field or fields that need the capability to have their values changed during a runtime. For example, a data structure that holds material properties may include a boolean field *ruptured* that would get turned on (converted from *false* to *true*) after a rupture event has occurred, thereafter enabling a change in material properties to occur moving forward.
 
 ## Abstract Type
 
@@ -24,41 +22,42 @@ Mutable types are wrappers around basic, numeric, Julia types.
 Mutable boolean values belong to the type:
 ```
 mutable struct MBoolean
-    b::Bool  # Bool <: Integer <: Real <: Number
+    b::Bool    # Bool <: Integer <: Real <: Number
 end
 ```
 
 Mutable integer numbers belong to the type:
 ```
 mutable struct MInteger <: MNumber
-    n::Int64  # Int64 <: Signed <: Integer <: Real <: Number
+    n::Int64    # Int64 <: Signed <: Integer <: Real <: Number
 end
 ```
 
 Mutable real numbers belong to the type:
 ```
 mutable struct MReal <: MNumber
-    n::Float64  # Float64 <: AbstractFloat <: Real <: Number
+    n::Float64    # Float64 <: AbstractFloat <: Real <: Number
 end
 ```
 
 Mutable vectors (1D arrays) belong to the type:
 ```
 struct MVector
-    len::Int64              # A vector's length, which is fixed.
-    vec::Vector{Float64}    # A column vector with mutable elements.
+    len::UInt32             # Length of a vector, which is fixed.
+    vec::Vector{Float64}    # Column vector with mutable elements.
 end
 ```
+whose whose elements `vec` are mutable, but whose dimension (length `len)` is immutable.
 
 Mutable matrices (2D arrays) belong to the type:
 ```
 struct MMatrix
-    rows::Int64             # Rows in a matrix, which is fixed.
-    cols::Int64             # Columns in a matrix, which is fixed.
-    vec::Vector{Float64}    # A matrix reshaped as a column vector with mutable elements.
+    rows::UInt16            # Rows in a matrix, which is fixed.
+    cols::UInt16            # Columns in a matrix, which is fixed.
+    vec::Vector{Float64}    # Matrix reshaped as a column vector with mutable elements.
 end
 ```
-where vector `vec` indexes along the matrix's column vectors according to
+whose elements `vec` are mutable, but whose dimensions (rows `rows` and columns `cols)` are immutable. Vector `vec` indexes along the matrix's column vectors according to the mapping
 ```
 index = row + (column - 1)*rows
 ```
@@ -67,20 +66,19 @@ so that, e.g., `matrix[row, column]` returns `matrix.vec[index].` All indexing i
 Mutable 3D arrays belong to the type:
 ```
 struct MArray
-    pgs::Int64              # Pages in an array, which is fixed.
-                            #    Each page contains a rows×cols matrix.
-    rows::Int64             # Matrix rows in each page, which is fixed.
-    cols::Int64             # Matrix columns in each page, which is fixed.
-    vec::Vector{Float64}    # An array reshaped as a column vector with mutable elements.
+    pp::UInt16              # Pages in an array, which is fixed.
+    rows::UInt16            # Matrix rows in each page, which is fixed.
+    cols::UInt16            # Matrix columns in each page, which is fixed.
+    vec::Vector{Float64}    # Array reshaped as a vector with mutable elements.
 end
 ```
-where vector `vec` indexes along the array's columns according to
+whose elements `vec` are mutable, but whose dimensions (pages `pp,` rows `rows` and columns `cols)` are immutable. Each page contains a `rows`×`cols` matrix. Vector `vec` indexes along the array's columns according to the mapping
 ```
-index = page + (row - 1)*pgs + (column - 1)*pgs*rows
+index = page + (row - 1)*pp + (column - 1)*pp*rows
 ```
 so that, e.g., `array[page, row, column]` returns `array.vec[index].` All indexing is handled internally.
 
-Mutable matrices and 3D arrays contain their components in a 1D format, viz., field `vec,` so that their data can be made persistent using the interface of package `JSON3.jl.`
+Mutable matrices and 3D arrays originally contained their components in a 1D format, viz., field `vec,` so that their data could be made persistent using the interface of package `JSON3.jl.` Since then `JSON3` has evolved into a much more robust package so this restriction is no longer necessary; nevertheless, matrices and 3D arrays used herein continue to be handled in memory in their column vector representations.
 
 ### Constructors
 
@@ -102,27 +100,25 @@ There are also constructors with a single argument, e.g.,
 ```
 which take on the appearance of a type casting.
 
-For the mutable array types, there are constructors with one argument, e.g.,
+For the mutable array types, there are constructors that dimension the arrays and then initialize their entries with zeros, e.g.,
 ```
-    vec = MVector(vector::Vector{Float64})
-    mtx = MMatrix(matrix::Matrix{Float64})
-    arr = MArray(array::Array{Float64,3})
+   vec = MVector(length::Integer)
+   mtx = MMatrix(rows::Integer, columns::Integer)
+   arr = MArray(pages::Integer, rows::Integer, columns::Integer)
 ```
-which take upon the appearance of a type casting.
-
-There are also constructors containing only dimensioning arguments, e.g.,
+There are also constructors that create mutable arrays from supplied arrays, viz.,
 ```
-   vec = MVector(length::Int64)
-   mtx = MMatrix(rows::Int64, columns::Int64)
-   arr = MArray(pages::Int64, rows::Int64, columns::Int64)
+    vec = MVector(vector::Vector{<:Real})
+    mtx = MMatrix(matrix::Matrix{<:Real})
+    arr = MArray(array::Array{<:Real,3})
 ```
-And, for JSON file structure compatibility, there are constructors
+which take upon the appearance of a type casting, and there are the general constructors
 ```
-   vec = MVector(length::Int64, vector::Vector{Float64})
-   mtx = MMatrix(rows::Int64, columns::Int64, vector::Vector{Float64})
-   arr = MArray(pages::Int64, rows::Int64, columns::Int64, vector::Vector{Float64})
+   vec = MVector(length::Integer, vector::Vector{<:Real})
+   mtx = MMatrix(rows::Integer, columns::Integer, vector::Vector{<:Real})
+   arr = MArray(pages::Integer, rows::Integer, columns::Integer, vector::Vector{<:Real})
 ```
-where `length(vec.vec) = length,` `length(mtx.vec) = rows*columns,` and `length(arr.vec) = pages*rows*columns.`
+where `length(vec.vec) = length,` `length(mtx.vec) = rows*columns` and `length(arr.vec) = pages*rows*columns.`
 
 #### Type Casting
 
@@ -131,9 +127,9 @@ Julia's built-in types can be gotten from their mutable counterparts via the fol
 function Base.:(Bool)(mb::MBoolean)::Bool
 function Base.:(Integer)(mi::MInteger)::Integer
 function Base.:(Real)(mr::MReal)::Real
-function Base.:(Vector)(mv::MVector)::Vector{Float64}
-function Base.:(Matrix)(mm::MMatrix)::Matrix{Float64}
-function Base.:(Array)(ma::MArray)::Array{Float64,3}
+function Base.:(Vector)(mv::MVector)::Vector{<:Real}
+function Base.:(Matrix)(mm::MMatrix)::Matrix{<:Real}
+function Base.:(Array)(ma::MArray)::Array{<:Real,3}
 ```
 These methods, which are effectively constructors, are required internally to serialize and/or deserialize these objects when writing-to or reading-from a JSON file.
 
@@ -141,33 +137,37 @@ These methods, which are effectively constructors, are required internally to se
 
 Instances of type `MVector` can be indexed for the purpose of getting or setting values at any element within the vector using standard notation, e.g., for getting `x = v[i]` and for setting `v[i] = x` where `x` is a real.
 
-Instances of type `MMatrix` can be indexed in one of two ways. First, one can get or set a value from/to any element in the matrix, e.g., for getting a value `x = m[i,j]` and for setting a value `m[i,j] = x.` Second, one can get or set a row vector from/to any row in the matrix, e.g. for getting a row vector `v = m[i]` and setting a row vector `m[i] = v` provided that the length of row vector `v` equals the number of columns in the matrix. This is useful whenever an instance of `MMatrix` is used as a container to store a sequence of vectors, say gathered along some solution path.
+Instances of type `MMatrix` can be indexed in one of two ways. First, one can get or set a value from or to any element in the matrix, e.g., for getting a value `x = m[i,j]` and for setting a value `m[i,j] = x.` Second, one can get or set a row vector from or to any row in the matrix, e.g. for getting a row vector `v = m[i]` and setting a row vector `m[i] = v` provided that the length of row vector `v` equals the number of columns in the matrix. This is useful whenever an instance of `MMatrix` is used as a container to store a sequence of vectors, say gathered along some solution path.
 
-Likewise, instances of type `MArray` can be indexed in one of two ways. First, one can get or set a value from/to any element in the array, e.g., for getting a value `x = a[i,j,k]` and for setting a value `a[i,j,k] = x.` Second, one can get or set a matrix from/to any page in the array, e.g. for getting a matrix `m = a[i]` and for setting a matrix `a[i] = m` provided that the dimensions of matrix `m` equal the number of rows and columns in the 3D array. This is useful whenever an instance of ` MArray` is used as a container to store a sequence of matrices, say gathered along some solution path.
+Likewise, instances of type `MArray` can be indexed in one of two ways. First, one can get or set a value from or to any element in the array, e.g., for getting a value `x = a[i,j,k]` and for setting a value `a[i,j,k] = x.` Second, one can get or set a matrix from or to any page in the array, e.g. for getting a matrix `m = a[i]` and for setting a matrix `a[i] = m` provided that the dimensions of matrix `m` equal the number of rows and columns in the 3D array. This is useful whenever an instance of ` MArray` is used as a container to store a sequence of matrices, say gathered along some solution path.
 
 ### Readers and Writers
 
-Methods have been created that write an object to its string representation for human consumption, and that read and write objects from and to a file for persistence. These methods take advantage of the multiple dispatch capability of the Julia compiler.
-
-The chosen protocol for persistence requires that one knows the type belonging to an object to be read in before it can actually be read in. As implemented, these JSON streams do not store type information, i.e., meta data; they only store the fields of an object.
+The methods of [Persistence](./README.Persistence.md) are extended here via the multiple dispatch capability of the `Julia` language.
 
 #### Write to a String
 
 A method that converts mutable objects into human readable strings is:
 ```
-function toString(y::MBoolean; aligned::Bool=false)::String
-function toString(y::MInteger; digits::Int64=0)::String
-function toString(y::MReal; format::Char='E', precision::Int=5, aligned::Bool=false)::String
-function toString(mv::MVector; format::Char='E')::String
-function toString(y::MMatrix; format::Char='E')::String
+function toString(y::MBoolean)::String
+function toString(y::MInteger)::String
+function toString(y::MReal)::String
+function toString(y::MVector)::String
+function toString(y::MMatrix)::String
 ```
-For the various `toString` interfaces listed above, their keywords are given default values that can be overwritten. Specifically, 
 
-* `format`: An exponential or scientific output will be written whenever `format` is set to 'e' or 'E', the latter of which is the default; otherwise, the output will be written in a fixed-point notation.
-* `precision`: The number of significant figures to be used in a numeric representation, precision ∈ {3, …, 7}, with 5 being the default, i.e., floating point numbers are truncated as a visual aid to the user.
-* `aligned`: If `true,` a white space will appear before `true` when converting a `Bool` or `MBoolean` to string, or a white space will appear before the first digit in a number whenever its value is non-negative. Aligning is useful, e.g., when stacking outputs, like when printing out a matrix as a string. The default is `false.`
+#### Write to a File
 
-Method `toString` can also handle many of the built-in types of the Julia language. See method `toString` discussed in [README.md](.\README.md).
+To write instances of the above mutable types to a JSON file, one can call the method
+```
+function toFile(y::MBoolean, json_stream::IOStream)
+function toFile(y::MInteger, json_stream::IOStream)
+function toFile(y::MReal, json_stream::IOStream)
+function toFile(y::MVector, json_stream::IOStream)
+function toFile(y::MMatrix, json_stream::IOStream)
+function toFile(y::MArray, json_stream::IOStream)
+```
+Argument `json_stream` comes from a call to function `openJSONWriter` discussed [here](.\README_Persistence.md).
 
 #### Read from a File
 
@@ -180,69 +180,62 @@ function fromFile(::Type{MVector}, json_stream::IOStream)::MVector
 function fromFile(::Type{MMatrix}, json_stream::IOStream)::MMatrix
 function fromFile(::Type{MArray}, json_stream::IOStream)::MArray
 ```
-Argument `json_stream` comes from a call to function `openJSONReader` discussed in [README.md](.\README.md).
+Argument `json_stream` comes from a call to function `openJSONReader` discussed [here](.\README_Persistence.md).
 
-These methods require the object being read in be of known type, fore which a call to this method returns an object of the specified type. Meta programming is not used here.
+Methods `toFile` and `fromFile` can also handle many of the built-in types of the `Julia` language, see [here](.\README_Persistence.md).
 
-#### Write to a File
+## Basic Methods
 
-To write instances the above mutable types to a JSON file, one can call the method
-```
-function toFile(y::MBoolean, json_stream::IOStream)
-function toFile(y::MInteger, json_stream::IOStream)
-function toFile(y::MReal, json_stream::IOStream)
-function toFile(y::MVector, json_stream::IOStream)
-function toFile(y::MMatrix, json_stream::IOStream)
-function toFile(y::MArray, json_stream::IOStream)
-```
-Argument `json_stream` comes from a call to function `openJSONWriter` discussed in [README.md](.\README.md).
+The get, set, copy and dimensioning methods.
 
-Methods `fromFile` and `toFile` can also handle many of the built-in types of the Julia language. These methods are discussed in [README.md](.\README.md).
-
-## Methods
-
-### get
-
-A method that retrieves the fundamental value held by a field belonging to a basic mutable object:
-```
-function Base.:(get)(y::MBoolean)::Bool
-function Base.:(get)(y::MInteger)::Integer
-function Base.:(get)(y::MReal)::Real
-```
-Method `getindex` has been overloaded so that mutable vectors, matrices and 3D arrays, viz., `MVector,` `MMatrix` and `MArray,` can be indexed for retrieval via the standard [] notation. See the `Indexing` section above.
-
-### set!
-
-A method that assigns a fundamental value to a field belonging to a basic mutable object:
-```
-function set!(y::MBoolean, x::Bool)
-function set!(y::MInteger, x::Integer)
-function set!(y::MReal, x::Real)
-```
-Method `setindex!` has been overloaded so that mutable vectors, matrices and 3D arrays, viz., `MVector,` `MMatrix` and `MArray,` can be indexed for assignment via the standard [] notation. See the `Indexing` section above.
-
-### copy
-
-A method that makes shallow copies of mutable types:
-```
-function Base.:(copy)(y::MBoolean)::MBoolean
-function Base.:(copy)(y::MInteger)::MInteger
-function Base.:(copy)(y::MReal)::MReal
-function Base.:(copy)(y::MVector)::MVector
-function Base.:(copy)(y::MMatrix)::MMatrix
-function Base.:(copy)(y::MArray)::MArray
+For MBoolean:
+```julia
+    function get(y::MBoolean)::Bool
+    function set!(y::MBoolean, x::Bool)
+    function copy(y::MBoolean)::MBoolean
 ```
 
-### deepcopy
-
-A method that makes deep copies of mutable types:
+For MInteger:
+```julia
+    function get(y::MInteger)::Integer
+    function set!(y::MInteger, x::Integer)
+    function copy(y::MInteger)::MInteger
 ```
-function Base.:(deepcopy)(y::MBoolean)::MBoolean
-function Base.:(deepcopy)(y::MInteger)::MInteger
-function Base.:(deepcopy)(y::MReal)::MReal
-function Base.:(deepcopy)(y::MVector)::MVector
-function Base.:(deepcopy)(y::MMatrix)::MMatrix
-function Base.:(deepcopy)(y::MArray)::MArray
+
+For MReal:
+```julia
+    function get(y::MReal)::Real
+    function set!(y::MReal, x::Real)
+    function copy(y::MReal)::MReal
+```
+
+For MVector:
+```julia
+    function getindex(y::MVector, index::Integer)::Real
+    function setindex!(y::MVector, value::Real, index::Integer)
+    function copy(y::MVector)::MVector
+    function length(y::MVector)::Integer
+    function size(y::MVector)::Tuple
+```
+
+For MMatrix:
+```julia
+    function getindex(y::MMatrix, row::Integer)::Vector{<:Real}
+    function getindex(y::MMatrix, row::Integer, column::Integer)::Real
+    function setindex!(y::MMatrix, value::Vector{<:Real}, row::Integer)
+    function setindex!(y::MMatrix, value::Real, row::Integer, column::Integer)
+    function copy(y::MMatrix)::MMatrix
+    function size(y::MMatrix)::Tuple
+```
+
+And for MArray:
+```julia
+    function getindex(y::MArray, page::Integer)::Matrix{<:Real}
+    function getindex(y::MArray, page::Integer, row::Integer, column::Integer)::Real
+    function setindex!(y::MArray, value::Matrix{<:Real}, page::Integer)
+    function setindex!(y::MArray, value::Real, page::Integer, row::Integer, column::Integer)
+    function copy(y::MArray)::MArray
+    function size(y::MArray)::Tuple
 ```
 
 ## Overloaded Operators
@@ -259,125 +252,127 @@ Many operators have been overloaded; specifically:
 
   * `MMatrix:`		==, ≠, ≈, \+, \-, \*, /, `\`
 
-where the last operator solves a linear system of equations, e.g., given a matrix **A** and a vector **b**, the linear system of equations **Ax** = **b** is solved for vector **x**. This is written in code as `x = A\b`.
-
   * `MArray:`		==, ≠, ≈
+
+where the last `MMatrix` operator solves a linear system of equations, e.g., given a matrix **A** and a vector **b**, the linear system of equations **Ax** = **b** is solved for vector **x**. This is written in code as `x = A\b`.
 
 
 ## Math Functions
 
+These math functions extend their corresponding methods in `Base` and `LinearAlgebra.`
+
 ### Methods specific to the `MReal` type.
 
 ```
-function Base.:(round)(y::MReal)::Real
-function Base.:(ceil)(y::MReal)::Real
-function Base.:(floor)(y::MReal)::Real
+function round(y::MReal)::Integer
+function ceil(y::MReal)::Integer
+function floor(y::MReal)::Integer
 ```
+which return instances of type `Integer,` not `MInteger,` because `MInteger`'s are intended to represent mutable fields in an immutable data `struct.`
 
 ### Methods common to both numeric mutable types, viz., `MInteger` and `MReal.`
 
 ```
-function Base.:(abs)(y::MNumber)::Real
-function Base.:(sign)(y::MNumber)::Real
-function Base.:(sqrt)(y::MNumber)::Real
-function Base.:(sin)(y::MNumber)::Real
-function Base.:(cos)(y::MNumber)::Real
-function Base.:(tan)(y::MNumber)::Real
-function Base.:(sinh)(y::MNumber)::Real
-function Base.:(cosh)(y::MNumber)::Real
-function Base.:(tanh)(y::MNumber)::Real
-function Base.:(asin)(y::MNumber)::Real
-function Base.:(acos)(y::MNumber)::Real
-function Base.:(atan)(y::MNumber)::Real
-function Base.:(atan)(y::MNumber, x::MNumber)::Real
-function Base.:(atan)(y::MNumber, x::Real)::Real
-function Base.:(atan)(y::Real, x::MNumber)::Real
-function Base.:(asinh)(y::MNumber)::Real
-function Base.:(acosh)(y::MNumber)::Real
-function Base.:(atanh)(y::MNumber)::Real
-function Base.:(log)(y::MNumber)::Real
-function Base.:(log2)(y::MNumber)::Real
-function Base.:(log10)(y::MNumber)::Real
-function Base.:(exp)(y::MNumber)::Real
-function Base.:(exp2)(y::MNumber)::Real
-function Base.:(exp10)(y::MNumber)::Real
+function abs(y::MNumber)::Real
+function sign(y::MNumber)::Real
+function sqrt(y::MNumber)::Real
+function sin(y::MNumber)::Real
+function cos(y::MNumber)::Real
+function tan(y::MNumber)::Real
+function sinh(y::MNumber)::Real
+function cosh(y::MNumber)::Real
+function tanh(y::MNumber)::Real
+function asin(y::MNumber)::Real
+function acos(y::MNumber)::Real
+function atan(y::MNumber)::Real
+function atan(y::MNumber, x::MNumber)::Real
+function atan(y::MNumber, x::Real)::Real
+function atan(y::Real, x::MNumber)::Real
+function asinh(y::MNumber)::Real
+function acosh(y::MNumber)::Real
+function atanh(y::MNumber)::Real
+function log(y::MNumber)::Real
+function log2(y::MNumber)::Real
+function log10(y::MNumber)::Real
+function exp(y::MNumber)::Real
+function exp2(y::MNumber)::Real
+function exp10(y::MNumber)::Real
 ```
-where, trigonometrically speaking, `y` is the rise and `x` is the run in the `atan` methods with two arguments.
+which return instances of type `Real,` not `MReal,` because `MReal`'s are intended to represent mutable fields in an immutable data `struct.`
+Trigonometrically speaking, `y` is the rise and `x` is the run in the `atan` method with two arguments.
 
 ### Methods for `MVector.`
 
 To get the p-norm, which defaults to the Euclidean norm, call method:
 ```
-function LinearAlgebra.:(norm)(y::MVector, p::Real=2)::Real
+function norm(y::MVector, p::Real=2)::Real
 ```
 
 To get a unit vector, call method:
 ```
-function unitVector(y::MVector)::Vector{Float64}
-function unitVector(y::Vector{Float64})::Vector{Float64}
+function unitVector(y::MVector)::MVector
+function unitVector(y::Vector{<:Real})::MVector
 ```
 
 To compute the cross product between two vectors, i.e., `y × z,` call method:
 ```
-function LinearAlgebra.:(cross)(y::MVector, z::MVector)::Vector{Float64}
-function LinearAlgebra.:(cross)(y::Vector{Float64}, z::MVector)::Vector{Float64}
-function LinearAlgebra.:(cross)(y::MVector, z::Vector{Float64})::Vector{Float64}
+function cross(y::MVector, z::MVector)::MVector
+function cross(y::Vector{<:Real}, z::MVector)::MVector
+function cross(y::MVector, z::Vector{<:Real})::MVector
 ```
 The cross product is only defined for vectors of length 3.
+
+Functions on a `MVector` return a `MVector,` unlike functions on a `MInteger` or `MReal,` which return an `Integer` or a `Real`.
 
 ### Functions for `MMatrix`
 
 To get the p-norm, which defaults to the Frobenius norm, call method:
 ```
-function LinearAlgebra.:(norm)(y::MMatrix, p::Real=2)::Real
+function norm(y::MMatrix, p::Real=2)::Real
 ```
 
 To get the transpose of a matrix, call method:
 ```
-function Base.:(transpose)(y::MMatrix)::Matrix{Float64}
+function transpose(y::MMatrix)::MMatrix
 ```
 
 To get the trace of a matrix, call method:
 ```
-function LinearAlgebra.:(tr)(y::MMatrix)::Real
+function tr(y::MMatrix)::Real
 ```
 
 To get the determinant of a matrix, call method:
 ```
-function LinearAlgebra.:(det)(y::MMatrix)::Real
+function det(y::MMatrix)::Real
 ```
 
 To get the inverse of a matrix, if it exists, call method:
 ```
-function Base.:(inv)(y::MMatrix)::Matrix{Float64}
+function inv(y::MMatrix)::MMatrix
 ```
 
-To get the QR or Gram-Schmidt decomposition of a matrix, call method:
+To get the **QR** or Gram-Schmidt decomposition of a matrix, call method:
 ```
-function qr(y::Matrix{Float64})::Tuple
+function qr(y::Matrix{<:Real})::Tuple
 function qr(y::MMatrix)::Tuple
 ```
 For example, `(Q, R) = qr(matrix)` where matrix `Q` is orthogonal and matrix `R` is upper triangular.
 
-To get the LQ decomposition of a matrix, call method:
+To get the **LQ** decomposition of a matrix, call method:
 ```
-function lq(y::Matrix{Float64})::Tuple
+function lq(y::Matrix{<:Real})::Tuple
 unction lq(y::MMatrix)::Tuple
 ```
 For example, `(L, Q) = lq(matrix)` where matrix `L` is lower triangular and matrix `Q` is orthogonal.
 
 To construct a matrix as a product between two vectors, e.g., `m[i,j] = y[i] z[j],` call method:
 ```
-function matrixProduct(y::Vector{Float64}, z::Vector{Float64})::Matrix{Float64}
-function matrixProduct(y::MVector, z::MVector)::Matrix{Float64}
-function matrixProduct(y::Vector{Float64}, z::MVector)::Matrix{Float64}
-function matrixProduct(y::MVector, z::Vector{Float64})::Matrix{Float64}
+function matrixProduct(y::Vector{<:Real}, z::Vector{<:Real})::Matrix{<:Real}
+function matrixProduct(y::MVector, z::MVector)::MMatrix
+function matrixProduct(y::Vector{<:Real}, z::MVector)::MMatrix
+function matrixProduct(y::MVector, z::Vector{<:Real})::MMatrix
 ```
 
-## Note
-
-All methods, operators and math functions pertaining to these types (except for `copy` and `deepcopy`) return instances belonging to their associated core types: viz., `Bool,` `Integer,` `Real,` `Vector{Float64},` `Matrix{Float64}` or `Array{Float64,3}.` This is because their intended use is to permit mutable fields to be incorporated into what are otherwise immutable data structures; thereby, allowing such fields to have a potential to change their values. As such, mutable fields belonging to immutable data structures will have the necessary infrastructure to be able to be used seamlessly in simple mathematical formulæ outside their defining data structures.
-
 [Home Page](.\README.md)
-
+[Prev Page](.\README_Persistence.md)
 [Next Page](.\README_PhysicalUnits.md)
