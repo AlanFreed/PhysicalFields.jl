@@ -1,16 +1,15 @@
 module PhysicalFields
 
 import
-    Base: ==, ≠, ≈, !, <, ≤, ≥, >, +, -, *, ÷, %, //, /, ^
+    Base: ==, ≠, ≈, !, <, ≤, ≥, >, +, -, *, ÷, %, /, ^
 
 import
     Base: abs, copy, deepcopy, get, getindex, setindex!, sign,
-          denominator, gcd, numerator,               # for rationals
-          ceil, floor, round,                        # for reals
-          abs2, angle, conj, imag, real,             # for complex
-          cos, cosh, sin, sinh, tan, tanh, sqrt,     # trig functions
-          acos, acosh, asin, asinh, atan, atanh,     # inverse trig functions
-          log, log2, log10, exp, exp2, exp10         # log-exponential functions
+          ceil, floor, round,
+          cos, cosh, sin, sinh, tan, tanh, sqrt,
+          acos, acosh, asin, asinh, atan, atanh,
+          log, log2, log10, exp, exp2, exp10,
+          inv, transpose
     # Function atan can be either of the form atan(x) or of form atan(y,x).
 
 import
@@ -24,29 +23,37 @@ using
 export
     # abstract types
 
-    MNumber,                 # <: Number,  base type for mutable numbers.
-    PhysicalField,           # An abstract type for physical fields.
-
+    MNumber,                # <: Number,  base type for mutable numbers.
+    PhysicalField,          # An abstract type for physical fields.
+                            
     # concrete types
 
-    MBoolean,                #             a mutable boolean.
-    MInteger,                # <: MNumber, a mutable integer number.
-    MReal,                   # <: MNumber, a mutable real/floating-point number.
+    MBoolean,               #             a mutable boolean.
+    MInteger,               # <: MNumber, a mutable integer number.
+    MReal,                  # <: MNumber, a mutable real/floating-point number.
 
-    MVector,                 # A vector with mutable elements.
-    MMatrix,                 # A matrix with mutable elements.
-    MArray,                  # A 3D array with mutable elements.
+    MVector,                # A fixed dimension vector with mutable elements.
+    MMatrix,                # A fixed dimension matrix with mutable elements.
+    MArray,                 # A fixed dimension 3D array with mutable elements.
+    
+    Bool,                   # Type casting from MBoolean to Bool.
+    Integer,                # Type casting from MInteger to Integer.
+    Real,                   # Type casting from MReal to Real.
+    Vector,                 # Type casting from MVector to Vector.
+    Matrix,                 # Type casting from MMatrix to Matrix.
+    Array,                  # Type casting from MArray to Array.
+    
+    PhysicalUnits,          # Type for systems of physical units.
+    #   units included:     # length, mass, amount of substance, time,
+                            # temperature, electric current, and luminous
+                            # intensity
 
-    PhysicalUnits,           # Type for systems of physical units.
-    #   units included:        length, mass, amount of substance, time, temperature,
-    #                          electric current, and luminous intensity
-
-    PhysicalScalar,          # <: PhysicalField,  A number with units.
-    PhysicalVector,          # <: PhysicalField,  A vector (array)  with units.
-    PhysicalTensor,          # <: PhysicalField,  A tensor (matrix) with units.
-    ArrayOfPhysicalScalars,  # Array of scalars with the same set of units.
-    ArrayOfPhysicalVectors,  # Array of vectors with the same length and units.
-    ArrayOfPhysicalTensors,  # Array of tensors with the same size and units.
+    PhysicalScalar,         # <: PhysicalField,  A number with units.
+    PhysicalVector,         # <: PhysicalField,  A vector (array)  with units.
+    PhysicalTensor,         # <: PhysicalField,  A tensor (matrix) with units.
+    ArrayOfPhysicalScalars, # Array of scalars with the same set of units.
+    ArrayOfPhysicalVectors, # Array of vectors with the same length and units.
+    ArrayOfPhysicalTensors, # Array of tensors with the same size and units.
 
     # functions
 
@@ -56,11 +63,17 @@ export
 
     # methods
 
+    get,
+    getindex,
     set!,
+    setindex!,
 
     fromFile,
     toFile,
     toString,
+    toReal,
+    toVector,
+    toMatrix,
 
     isCGS,
     isSI,
@@ -69,10 +82,32 @@ export
 
     toCGS,
     toSI,
-    toReal,
-    toVector,
-    toMatrix,
 
+    abs,
+    round,
+    ceil,
+    floor,
+    sign,
+    sin,
+    cos,
+    tan,
+    sinh,
+    cosh,
+    tanh,
+    asin,
+    acos,
+    atan,
+    asinh,
+    acosh,
+    atanh,
+    log,
+    log2,
+    log10,
+    exp,
+    exp2,
+    exp10,
+    sqrt,
+    
     norm,
     unitVector,
     cross,
@@ -176,6 +211,9 @@ export
 
 ### source files
 
+# persistence to file and string
+include("Persistence.jl")
+
 # mutable types
 include("MutableTypes.jl")
 
@@ -195,3 +233,4 @@ include("PhysicalVectors.jl")
 include("PhysicalTensors.jl")
 
 end # module PhysicalFields
+

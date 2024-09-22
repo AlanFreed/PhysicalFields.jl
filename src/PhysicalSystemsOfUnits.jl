@@ -30,13 +30,13 @@ end
 Returns `true` if `y` is without physical dimension; otherwise, it returns `false`.
 """
 function isDimensionless(y::PhysicalUnits)::Bool
-    if ((y.length == 0) &&
-        (y.mass == 0) &&
-        (y.amount_of_substance == 0) &&
-        (y.time == 0) &&
-        (y.temperature == 0) &&
-        (y.electric_current == 0) &&
-        (y.light_intensity == 0))
+    if (y.length == 0 &&
+        y.mass == 0 &&
+        y.amount_of_substance == 0 &&
+        y.time == 0 &&
+        y.temperature == 0 &&
+        y.electric_current == 0 &&
+        y.light_intensity == 0)
         return true
     else
         return false
@@ -50,7 +50,7 @@ end
 Returns `true` if `y` has SI units; otherwise, it returns `false`.
 """
 function isSI(y::PhysicalUnits)::Bool
-    if (y.system == "SI") || isDimensionless(y)
+    if y.system == "SI" || isDimensionless(y)
         return true
     else
         return false
@@ -63,7 +63,7 @@ end
 Returns `true` if `y` has CGS units; otherwise, it returns `false`.
 """
 function isCGS(y::PhysicalUnits)::Bool
-    if (y.system == "CGS") || isDimensionless(y)
+    if y.system == "CGS" || isDimensionless(y)
         return true
     else
         return false
@@ -76,13 +76,13 @@ end
 Returns `true` if `y` and `z` are the same kind of unit, but possibly belong to different systems of units; otherwise, returns `false`.
 """
 function areEquivalent(y::PhysicalUnits, z::PhysicalUnits)::Bool
-    if ((y.length == z.length) &&
-        (y.mass == z.mass) &&
-        (y.amount_of_substance == z.amount_of_substance) &&
-        (y.time == z.time) &&
-        (y.temperature == z.temperature) &&
-        (y.electric_current == z.electric_current) &&
-        (y.light_intensity == z.light_intensity))
+    if (y.length == z.length &&
+        y.mass == z.mass &&
+        y.amount_of_substance == z.amount_of_substance &&
+        y.time == z.time &&
+        y.temperature == z.temperature &&
+        y.electric_current == z.electric_current &&
+        y.light_intensity == z.light_intensity)
         return true
     else
         return false
@@ -205,17 +205,6 @@ function Base.:(copy)(y::PhysicalUnits)::PhysicalUnits
     return PhysicalUnits(y.system, length, mass, amount_of_substance, time, temperature, electric_current, light_intensity)
 end
 
-function Base.:(deepcopy)(y::PhysicalUnits)::PhysicalUnits
-    length = deepcopy(y.length)
-    mass = deepcopy(y.mass)
-    amount_of_substance = deepcopy(y.amount_of_substance)
-    time = deepcopy(y.time)
-    temperature = deepcopy(y.temperature)
-    electric_current = deepcopy(y.electric_current)
-    light_intensity = deepcopy(y.light_intensity)
-    return PhysicalUnits(y.system, length, mass, amount_of_substance, time, temperature, electric_current, light_intensity)
-end
-
 #=
 --------------------------------------------------------------------------------
 =#
@@ -250,15 +239,14 @@ function toString(y::PhysicalUnits)::String
                 s1 = string("cm^", string(y.length))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
-        if ((y.mass > 0) ||
-            (y.amount_of_substance > 0) ||
-            (y.time > 0) ||
-            (y.temperature > 0) ||
-            (y.electric_current > 0) ||
-            (y.light_intensity > 0))
+        if (y.mass > 0 ||
+            y.amount_of_substance > 0 ||
+            y.time > 0 ||
+            y.temperature > 0 ||
+            y.electric_current > 0 ||
+            y.light_intensity > 0)
             s1 = string(s1, "⋅")
         end
     else
@@ -291,14 +279,13 @@ function toString(y::PhysicalUnits)::String
                 s2 = string("g^", string(y.mass))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
-        if ((y.amount_of_substance > 0) ||
-            (y.time > 0) ||
-            (y.temperature > 0) ||
-            (y.electric_current > 0) ||
-            (y.light_intensity > 0))
+        if (y.amount_of_substance > 0 ||
+            y.time > 0 ||
+            y.temperature > 0 ||
+            y.electric_current > 0 ||
+            y.light_intensity > 0)
             s2 = string(s2, "⋅")
         end
     else
@@ -306,7 +293,7 @@ function toString(y::PhysicalUnits)::String
     end
     # Molar units in numerator.
     if y.amount_of_substance > 0
-        if (y.system == "SI") || (y.system == "CGS")
+        if y.system == "SI" || y.system == "CGS"
             if y.amount_of_substance == 1
                 s3 = "mol"
             elseif y.amount_of_substance == 2
@@ -319,13 +306,12 @@ function toString(y::PhysicalUnits)::String
                 s3 = string("mol^", string(y.amount_of_substance))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
-        if ((y.time > 0) ||
-            (y.temperature > 0) ||
-            (y.electric_current > 0) ||
-            (y.light_intensity > 0))
+        if (y.time > 0 ||
+            y.temperature > 0 ||
+            y.electric_current > 0 ||
+            y.light_intensity > 0)
             s3 = string(s3, "⋅")
         end
     else
@@ -333,7 +319,7 @@ function toString(y::PhysicalUnits)::String
     end
     # Time units in numerator.
     if y.time > 0
-        if (y.system == "SI") || (y.system == "CGS")
+        if y.system == "SI" || y.system == "CGS"
             if y.time == 1
                 s4 = "s"
             elseif y.time == 2
@@ -346,12 +332,11 @@ function toString(y::PhysicalUnits)::String
                 s4 = string("s^", string(y.time))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
-        if ((y.temperature > 0) ||
-            (y.electric_current > 0) ||
-            (y.light_intensity > 0))
+        if (y.temperature > 0 ||
+            y.electric_current > 0 ||
+            y.light_intensity > 0)
             s4 = string(s4, "⋅")
         end
     else
@@ -359,7 +344,7 @@ function toString(y::PhysicalUnits)::String
     end
     # Temperature units in numerator.
     if y.temperature > 0
-        if (y.system == "SI") || (y.system == "CGS")
+        if y.system == "SI" || y.system == "CGS"
             if y.temperature == 1
                 s5 = "K"
             elseif y.temperature == 2
@@ -372,11 +357,10 @@ function toString(y::PhysicalUnits)::String
                 s5 = string("K^", string(y.temperature))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
-        if ((y.electric_current > 0) ||
-            (y.light_intensity > 0))
+        if (y.electric_current > 0 ||
+            y.light_intensity > 0)
             s5 = string(s5, "⋅")
         end
     else
@@ -384,7 +368,7 @@ function toString(y::PhysicalUnits)::String
     end
     # Electric current units in numerator.
     if y.electric_current > 0
-        if (y.system == "SI") || (y.system == "CGS")
+        if y.system == "SI" || y.system == "CGS"
             if y.electric_current == 1
                 s6 = "A"
             elseif y.electric_current == 2
@@ -397,8 +381,7 @@ function toString(y::PhysicalUnits)::String
                 s6 = string("A^", string(y.electric_current))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
         if y.light_intensity > 0
             s6 = string(s6, "⋅")
@@ -408,7 +391,7 @@ function toString(y::PhysicalUnits)::String
     end
     # Light intensity units in numerator.
     if y.light_intensity > 0
-        if (y.system == "SI") || (y.system == "CGS")
+        if y.system == "SI" || y.system == "CGS"
             if y.light_intensity == 1
                 s7 = "cd"
             elseif y.light_intensity == 2
@@ -421,8 +404,7 @@ function toString(y::PhysicalUnits)::String
                 s7 = string("cd^", string(y.light_intensity))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
     else
         s7 = ""
@@ -451,25 +433,25 @@ function toString(y::PhysicalUnits)::String
         count += 1
     end
     if count > 1
-        if ((y.length < 1) &&
-            (y.mass < 1) &&
-            (y.amount_of_substance < 1) &&
-            (y.time < 1) &&
-            (y.temperature < 1) &&
-            (y.electric_current < 1) &&
-            (y.light_intensity < 1))
+        if (y.length < 1 &&
+            y.mass < 1 &&
+            y.amount_of_substance < 1 &&
+            y.time < 1 &&
+            y.temperature < 1 &&
+            y.electric_current < 1 &&
+            y.light_intensity < 1)
             s8 = "1/("
         else
             s8 = "/("
         end
     elseif count == 1
-        if ((y.length < 1) &&
-            (y.mass < 1) &&
-            (y.amount_of_substance < 1) &&
-            (y.time < 1) &&
-            (y.temperature < 1) &&
-            (y.electric_current < 1) &&
-            (y.light_intensity < 1))
+        if (y.length < 1 &&
+            y.mass < 1 &&
+            y.amount_of_substance < 1 &&
+            y.time < 1 &&
+            y.temperature < 1 &&
+            y.electric_current < 1 &&
+            y.light_intensity < 1)
             s8 = "1/"
         else
             s8 = "/"
@@ -504,15 +486,14 @@ function toString(y::PhysicalUnits)::String
                 s9 = string("cm^", string(-y.length))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
-        if ((y.mass < 0) ||
-            (y.amount_of_substance < 0) ||
-            (y.time < 0) ||
-            (y.temperature < 0) ||
-            (y.electric_current < 0) ||
-            (y.light_intensity < 0))
+        if (y.mass < 0 ||
+            y.amount_of_substance < 0 ||
+            y.time < 0 ||
+            y.temperature < 0 ||
+            y.electric_current < 0 ||
+            y.light_intensity < 0)
             s9 = string(s9, "⋅")
         end
     else
@@ -545,14 +526,13 @@ function toString(y::PhysicalUnits)::String
                 s10 = string("g^", string(-y.mass))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
-        if ((y.amount_of_substance < 0) ||
-            (y.time < 0) ||
-            (y.temperature < 0) ||
-            (y.electric_current < 0) ||
-            (y.light_intensity < 0))
+        if (y.amount_of_substance < 0 ||
+            y.time < 0 ||
+            y.temperature < 0 ||
+            y.electric_current < 0 ||
+            y.light_intensity < 0)
             s10 = string(s10, "⋅")
         end
     else
@@ -560,7 +540,7 @@ function toString(y::PhysicalUnits)::String
     end
     # Molar units in demoninator.
     if y.amount_of_substance < 0
-        if (y.system == "SI") || (y.system == "CGS")
+        if y.system == "SI" || y.system == "CGS"
             if y.amount_of_substance == -1
                 s11 = "mol"
             elseif y.amount_of_substance == -2
@@ -573,13 +553,12 @@ function toString(y::PhysicalUnits)::String
                 s11 = string("mol^", string(-y.amount_of_substance))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
-        if ((y.time < 0) ||
-            (y.temperature < 0) ||
-            (y.electric_current < 0) ||
-            (y.light_intensity < 0))
+        if (y.time < 0 ||
+            y.temperature < 0 ||
+            y.electric_current < 0 ||
+            y.light_intensity < 0)
             s11 = string(s11, "⋅")
         end
     else
@@ -587,7 +566,7 @@ function toString(y::PhysicalUnits)::String
     end
     # Time units in demoninator.
     if y.time < 0
-        if (y.system == "SI") || (y.system == "CGS")
+        if y.system == "SI" || y.system == "CGS"
             if y.time == -1
                 s12 = "s"
             elseif y.time == -2
@@ -600,12 +579,11 @@ function toString(y::PhysicalUnits)::String
                 s12 = string("s^", string(-y.time))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
-        if ((y.temperature < 0) ||
-            (y.electric_current < 0) ||
-            (y.light_intensity < 0))
+        if (y.temperature < 0 ||
+            y.electric_current < 0 ||
+            y.light_intensity < 0)
             s12 = string(s12, "⋅")
         end
     else
@@ -613,7 +591,7 @@ function toString(y::PhysicalUnits)::String
     end
     # Temperature units in demoninator.
     if y.temperature < 0
-        if (y.system == "SI") || (y.system == "CGS")
+        if y.system == "SI" || y.system == "CGS"
             if y.temperature == -1
                 s13 = "K"
             elseif y.temperature == -2
@@ -626,11 +604,10 @@ function toString(y::PhysicalUnits)::String
                 s13 = string("K^", string(-y.temperature))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
-        if ((y.electric_current < 0) ||
-            (y.light_intensity < 0))
+        if (y.electric_current < 0 ||
+            y.light_intensity < 0)
             s13 = string(s13, "⋅")
         end
     else
@@ -638,7 +615,7 @@ function toString(y::PhysicalUnits)::String
     end
     # Electric current units in demoninator.
     if y.electric_current < 0
-        if (y.system == "SI") || (y.system == "CGS")
+        if y.system == "SI" || y.system == "CGS"
             if y.electric_current == -1
                 s14 = "A"
             elseif y.electric_current == -2
@@ -651,8 +628,7 @@ function toString(y::PhysicalUnits)::String
                 s14 = string("A^", string(-y.electric_current))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
         if y.light_intensity < 0
             s14 = string(s14, "⋅")
@@ -662,7 +638,7 @@ function toString(y::PhysicalUnits)::String
     end
     # Light intensity units in demoninator.
     if y.light_intensity < 0
-        if (y.system == "SI") || (y.system == "CGS")
+        if y.system == "SI" || y.system == "CGS"
             if y.light_intensity == -1
                 s15 = "cd"
             elseif y.light_intensity == -2
@@ -675,8 +651,7 @@ function toString(y::PhysicalUnits)::String
                 s15 = string("cd^", string(-y.light_intensity))
             end
         else
-            msg = "The system of units is unknown."
-            throw(ErrorException(msg))
+            error("The system of units is unknown.")
         end
     else
         s15 = ""
@@ -704,8 +679,7 @@ function toFile(y::PhysicalUnits, json_stream::IOStream)
         JSON3.write(json_stream, y)
         write(json_stream, '\n')
     else
-        msg = "The supplied JSON stream is not open."
-        throw(ErrorException(msg))
+        error("The supplied JSON stream is not open.")
     end
     flush(json_stream)
     return nothing
@@ -715,8 +689,7 @@ function fromFile(::Type{PhysicalUnits}, json_stream::IOStream)::PhysicalUnits
     if isopen(json_stream)
         y = JSON3.read(readline(json_stream), PhysicalUnits)
     else
-        msg = "The supplied JSON stream is not open."
-        throw(ErrorException(msg))
+        error("The supplied JSON stream is not open.")
     end
     return y
 end
