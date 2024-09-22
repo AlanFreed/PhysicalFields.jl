@@ -1,3 +1,0 @@
-"Now we test writing/reading mutable booleans to/from a file."
-true
-{"b":false}
