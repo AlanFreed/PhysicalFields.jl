@@ -36,8 +36,9 @@ Constructors
 ```
 function PhysicalScalar(units::PhysicalUnits)
 function PhysicalScalar(value::Real, units::PhysicalUnits)
+function PhysicalScalar(value::MReal, units::PhysicalUnits)
 ```
-These constructors will return a new scalar object whose physical units are specified by argument `units.` The first constructor assigns a numeric value of zero to the scalar field, while the second constructor assigns to it the numeric value specified by argument `value.`
+These constructors will return a new scalar object whose physical units are specified by argument `units.` The first constructor assigns a numeric value of zero to the scalar field, while the other two constructors assign to the scalar that numeric value specified by argument `value.`
 
 ### ArrayOfPhysicalScalars
 
