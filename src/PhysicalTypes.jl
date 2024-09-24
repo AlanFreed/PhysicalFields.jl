@@ -5,7 +5,7 @@
 abstract type PhysicalField end
 
 struct PhysicalScalar <: PhysicalField
-    value::MReal            # value of a scalar in its specified system of units
+    value::MReal            # value of scalar in its specified system of units
     units::PhysicalUnits    # physical units of the scalar
 
     # constructors
@@ -15,18 +15,16 @@ struct PhysicalScalar <: PhysicalField
     end
 
     function PhysicalScalar(value::Real, units::PhysicalUnits)
-        if value isa MReal
-            new(value, units)
-        elseif value isa Real
-            new(MReal(value), units)
-        else
-            new(MReal(convert(Float64, value)), units)
-        end
+        new(MReal(value), units)
+    end
+
+    function PhysicalScalar(value::MReal, units::PhysicalUnits)
+        new(value, units)
     end
 end
 
 struct PhysicalVector <: PhysicalField
-    vector::MVector         # values of a vector in its specified system of units
+    vector::MVector         # values of vector in its specified system of units
     units::PhysicalUnits    # physical units of the vector
 
     # constructors
@@ -45,7 +43,7 @@ struct PhysicalVector <: PhysicalField
 end
 
 struct PhysicalTensor <: PhysicalField
-    matrix::MMatrix         # values of a tensor in its specified system of units
+    matrix::MMatrix         # values of tensor in its specified system of units
     units::PhysicalUnits    # physical units of the tensor
 
     # constructors
