@@ -1,4 +1,4 @@
-[Return to Main Document](.\README.md)
+[Return to Main Document](./README.md)
 
 # PhysicalVectors
 
@@ -15,7 +15,7 @@ end
 ```
 and for an array of vector fields, use
 ```
-struct ArrayOfPhysicalVectors
+struct ArrayOfPhysicalVectors <: ArrayOfPhysicalFields
     array::MMatrix          # array of row vectors holding values of a physical vector
     units::PhysicalUnits    # physical units of the vector array
 end
@@ -158,6 +158,6 @@ function cross(y::PhysicalVector, z::PhysicalVector)::PhysicalVector
 ```
 returns the cross product `y`×`z,` provided these two vectors each has a length (size) of 3.
 
-[Home Page](.\README.md)
-[Prev Page](.\README_PhysicalScalars.md)
-[Next Page](.\README_PhysicalTensors.md)
+[Home Page](./README.md)
+[Prev Page](./README_PhysicalScalars.md)
+[Next Page](./README_PhysicalTensors.md)

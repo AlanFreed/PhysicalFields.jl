@@ -1,3 +1,8 @@
+% PhysicalFields
+% author Alan Freed
+% version 1.4.0
+% date Aug 26 2026
+
 # PhysicalFields
 
 A physical field is comprised of a numeric value---viz., a number (scalar), an array (vector), or a matrix (tensor)---plus the physical units in terms of which its numeric value has meaning. Pressure is an example for a scalar. Force is an example for a vector. Stress is an example for a tensor. This module creates such fields in a manner that they are readily adoptable for analysis.
@@ -9,12 +14,15 @@ using Pkg
 Pkg.add(url = "https://github.com/AlanFreed/PhysicalFields.jl")
 ```
 
-## Abstract Type
+## Abstract Types
 
 All physical fields, e.g., `PhysicalScalar,` are extensions of this super type.
-
 ```
 abstract type PhysicalField end
+```
+and all arrays of a physical field, e.g., `ArrayOfPhysicalScalars,` are extensions of the super type
+```
+abstract type ArrayOfPhysicalFields end
 ```
 
 ## Implementation
@@ -47,9 +55,13 @@ A physical vector has a numeric quantity represented as a one-dimensional array 
 
 A physical tensor has a numeric quantity represented as a matrix or two-dimensional array of numbers whose values depend upon the system of units in which the matrix is evaluated in. Arrays of physical tensors are useful as containers, e.g., holding values for a tensor field gathered along a solution path.
 
-[Next Page](.\README_Persistence.md)
+[Next Page](./README_Persistence.md)
 
 ## Version History
+
+### Version 1.4.0
+
+Introduced the abstract type `ArrayOfPhysicalFields` which is now inherited by types: `ArrayOfPhysicalScalars,` `ArrayOfPhysicalVectors` and `ArrayOfPhysicalTensors.`
 
 ### Version 1.3.0
 

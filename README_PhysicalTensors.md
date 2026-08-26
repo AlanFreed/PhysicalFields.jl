@@ -1,4 +1,4 @@
-[Return to Main Document](.\README.md)
+[Return to Main Document](./README.md)
 
 # PhysicalTensors
 
@@ -15,7 +15,7 @@ end
 ```
 while for an array of a tensor fields, use the type
 ```
-struct ArrayOfPhysicalTensors
+struct ArrayOfPhysicalTensors <: ArrayOfPhysicalFields
     array::MArray           # array of matrices holding values of a physical tensor
     units::PhysicalUnits    # physical units of the tensor array
 end
@@ -193,5 +193,5 @@ where **L** is a lower-triangular (left) matrix (a tensor with units of the pass
 
 *Note:* The rotation matrix **Q** returned by a **QR** matrix decomposition of a tensor is, in general, not the same rotation matrix **Q** returned by an **LQ** decomposition of the tensor. In the mechanics of stretch, **Q** in **QR** is a rotation taken in a Lagrangian frame of reference, while **Q** in **LQ** is a rotation taken in an Eulerian frame of reference.
 
-[Home Page](.\README.md)
-[Prev Page](.\README_PhysicalVectors.md)
+[Home Page](./README.md)
+[Prev Page](./README_PhysicalVectors.md)

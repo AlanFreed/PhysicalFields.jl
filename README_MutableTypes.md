@@ -1,5 +1,5 @@
 
-[Return to Main Document](.\README.md)
+[Return to Main Document](./README.md)
 
 # MutableTypes
 
@@ -373,6 +373,6 @@ function matrixProduct(y::Vector{<:Real}, z::MVector)::MMatrix
 function matrixProduct(y::MVector, z::Vector{<:Real})::MMatrix
 ```
 
-[Home Page](.\README.md)
-[Prev Page](.\README_Persistence.md)
-[Next Page](.\README_PhysicalUnits.md)
+[Home Page](./README.md)
+[Prev Page](./README_Persistence.md)
+[Next Page](./README_PhysicalUnits.md)

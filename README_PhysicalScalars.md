@@ -1,6 +1,4 @@
-
-
-[Return to Main Document](.\README.md)
+[Return to Main Document](./README.md)
 
 # PhysicalScalars
 
@@ -19,7 +17,7 @@ The value held by a scalar is mutable.
 
 For an array of scalar fields, use the type
 ```
-struct ArrayOfPhysicalScalars
+struct ArrayOfPhysicalScalars <: ArrayOfPhysicalFields
     array::MVector          # array holding values of a physical scalar
     units::PhysicalUnits    # physical units of the scalar array
 end
@@ -187,11 +185,11 @@ function exp(y::PhysicalScalar)::Real
 function exp2(y::PhysicalScalar)::Real
 function exp10(y::PhysicalScalar)::Real
 ```
-These are the same functions that have been extended for mutable numbers found [here](.\README_MutableTypes.md).
+These are the same functions that have been extended for mutable numbers found [here](./README_MutableTypes.md).
 
-[Home Page](.\README.md)
-[Prev Page](.\README_PhysicalUnits.md)
-[Next Page](.\README_PhysicalVectors.md)
+[Home Page](./README.md)
+[Prev Page](./README_PhysicalUnits.md)
+[Next Page](./README_PhysicalVectors.md)
 
 
 
