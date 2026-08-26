@@ -25,6 +25,7 @@ export
 
     MNumber,                # <: Number,  base type for mutable numbers.
     PhysicalField,          # An abstract type for physical fields.
+    ArrayOfPhysicalFields,  # An abstract type for an array of physical fields.
                             
     # concrete types
 
@@ -51,9 +52,9 @@ export
     PhysicalScalar,         # <: PhysicalField,  A number with units.
     PhysicalVector,         # <: PhysicalField,  A vector (array)  with units.
     PhysicalTensor,         # <: PhysicalField,  A tensor (matrix) with units.
-    ArrayOfPhysicalScalars, # Array of scalars with the same set of units.
-    ArrayOfPhysicalVectors, # Array of vectors with the same length and units.
-    ArrayOfPhysicalTensors, # Array of tensors with the same size and units.
+    ArrayOfPhysicalScalars, # <: ArrayOfPhysicalFields, scalars with same set of units.
+    ArrayOfPhysicalVectors, # <: ArrayOfPhysicalFields, vectors with same length and units.
+    ArrayOfPhysicalTensors, # <: ArrayOfPhysicalFields, tensors with same size and units.
 
     # functions
 

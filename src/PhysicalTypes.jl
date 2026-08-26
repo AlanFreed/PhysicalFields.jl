@@ -4,6 +4,8 @@
 
 abstract type PhysicalField end
 
+abstract type ArrayOfPhysicalFields end
+
 struct PhysicalScalar <: PhysicalField
     value::MReal            # value of scalar in its specified system of units
     units::PhysicalUnits    # physical units of the scalar
@@ -61,7 +63,7 @@ struct PhysicalTensor <: PhysicalField
     end
 end
 
-struct ArrayOfPhysicalScalars
+struct ArrayOfPhysicalScalars <: ArrayOfPhysicalFields
     array::MVector          # array holding values of a physical scalar
     units::PhysicalUnits    # physical units of the scalar array
 
@@ -80,7 +82,7 @@ struct ArrayOfPhysicalScalars
     end
 end
 
-struct ArrayOfPhysicalVectors
+struct ArrayOfPhysicalVectors <: ArrayOfPhysicalFields
     array::MMatrix          # array of vectors holding values of a physical vector
     units::PhysicalUnits    # physical units of the vector array
 
@@ -99,7 +101,7 @@ struct ArrayOfPhysicalVectors
     end
 end
 
-struct ArrayOfPhysicalTensors
+struct ArrayOfPhysicalTensors <: ArrayOfPhysicalFields
     array::MArray           # array of matrices holding values of a physical tensor
     units::PhysicalUnits    # physical units of the tensor array
 
