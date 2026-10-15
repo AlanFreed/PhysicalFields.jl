@@ -1,10 +1,12 @@
-[Return to Main Document](.\README.md)
+[Return to Main Document](./README.md)
 
-# PhysicalUnits
+# Physical Units
 
 Physical fields have units, e.g., bodies have a mass. Such units are handled here in an unambiguous way. Two systems of units are introduced. The `SI` system of physical units, which is the default system in this implementation, and the `CGS` system of physical units. Other systems may be added in future releases.
 
-## Concrete Type
+## Concrete Types
+
+### PhysicalUnits
 
 The type handling physical systems of units is:
 ```
@@ -19,10 +21,10 @@ struct PhysicalUnits
     light_intensity::Integer
 end
 ```
-where the integer values that hold the exponents for the respective field.
+where integer values hold the exponents for their respective field.
 A dimensionless object has exponents of 0 for each of its seven fields.
 
-### Constructor
+#### Constructor
 
 Only one internal constructor is provided. It is the default constructor.
 ```
@@ -30,23 +32,66 @@ function PhysicalUnits(system::String, length::Integer, mass::Integer, amount_of
 ```
 To create a dimensionless object, one can call either call `PhysicalUnits("SI", 0, 0, 0, 0, 0, 0, 0)` or `PhysicalUnits("CGS", 0, 0, 0, 0, 0, 0, 0).` Both are treated the same, viz., being dimensionless is independent of one's choice for a physical system of units.
 
+### VectorOfPhysicalUnits
+
+A collection of physical units, gathered as a vector, arise from the type
+```
+struct VectorOfPhysicalUnits
+    len::UInt32
+    vec::Vector{PhysicalUnits}
+end
+```
+where vector `vec` of length `len` holds these physical units.
+
+#### Constructor
+
+The constructor for creating a vector of physical units is
+```
+function VectorOfPhysicalUnits(length::Integer)
+```
+which returns a vector whose entries are instances of `PhysicalUnits` with each entry being initially assigned a dimensionless value, which can be reassigned another value using the `[ ]` operator.
+
+### MatrixOfPhysicalUnits
+
+A collection of physical units, gather as a matrix, arise from the type
+```
+struct MatrixOfPhysicalUnits
+    rows::UInt16
+    cols::UInt16
+    vec::Vector{PhysicalUnits}
+end
+```
+ where a matrix of size `(rows, cols)` has elements that appear as entries in a vector `vec,` i.e., the matrix elements have been reshaped into a column vector with mutable elements.
+ 
+#### Constructor
+ 
+ The constructor for creating a matrix of physical units is
+```
+    function MatrixOfPhysicalUnits(rows::Integer, columns::Integer)
+```
+which returns a matrix whose entries are instances of `PhysicalUnits` with each entry being initially assigned a dimensionless value, which can be reassigned another value using the `[,]` operator.
+
 ## Writers and Readers
 
 To convert a system of units into a string for human consumption, one can call
 ```
 function toString(y::PhysicalUnits)::String
 ```
-which will produce outputs like g/(cm⋅s²) for denoting stress in the CGS system of units. This is likely the method one will use most often from the physical units section of module `PhysicalFields.`
+which will produce outputs like g/(cm⋅s²) for denoting stress in the CGS system of units. This is likely the method one will use most often from the physical units section of module `PhysicalFields.` The is no method for converting instances of `VectorOfPhysicalUnits` or `MatrixOfPhysicalUnits` into strings.
 
 To write a system of units to a JSON file, one can call
 ```
 function toFile(y::PhysicalUnits, json_stream::IOStream)
+function toFile(y::VectorOfPhysicalUnits, json_stream::IOStream)
+function toFile(y::MatrixOfPhysicalUnits, json_stream::IOStream)
 ```
 where argument `json_stream` comes from a call to `openJSONWriter` discussed [here](.\README_Persistence.md).
 
 To read a system of units from a JSON file, one can call
 ```
 function fromFile(::Type{PhysicalUnits}, json_stream::IOStream)::PhysicalUnits
+function fromFile(::Type{VectorOfPhysicalUnits}, json_stream::IOStream)::VectorOfPhysicalUnits
+function fromFile(::Type{MatrixOfPhysicalUnits}, json_stream::IOStream)::MatrixOfPhysicalUnits
 ```
 where argument `json_stream` comes from a call to `openJSONReader` discussed [here](.\README_Persistence.md).
 
@@ -160,6 +205,8 @@ When multiplying two physical fields the exponents of their units will add, whil
 A method that makes copies of unit types.
 ```
 function Base.:(copy)(y::PhysicalUnits)::PhysicalUnits
+function Base.:(copy)(y::VectoOfPhysicalUnits)::VectorOfPhysicalUnits
+function Base.:(copy)(y::MatrixOfPhysicalUnits)::MatrixOfPhysicalUnits
 ```
 
 #### Type Testing
@@ -193,10 +240,8 @@ Types `PhysicalScalar,` `PhysicalVector` and `PhysicalTensor,` also defined in t
 
 I wrote this package for personal consumption, unbeknownst at the time of an existing package [Unitful.jl](https://github.com/PainterQubits/Unitful.jl), which is quite advanced and well supported. Even so, there remains value in the implementation of type `PhysicalUnits,` as they are fields in my physical types (`PhysicalScalar,` `PhysicalVector` and `PhysicalTensor`) where units are handled ubiquitously, behind the scene, in scalar, vector and tensor operations.
 
-Over the years I've written similar packages in different languages. This is by far the most elaborate implementation that I've written. When I was a student, I was taught to check my solutions by first checking their units. Existing scientific software has been wanting in this regard over my entire career; hence, my creation of this capability here. 
+Over the years I've written similar packages in different languages. This is by far the most elaborate implementation that I've written. When I was a student, I was taught to check my solutions by first checking their units. Existing scientific software has been wanting in this regard over my entire career; hence, in my retirement, my creation of this capability here. 
 
-[Home Page](.\README.md)
-[Prev Page](.\README_MutableTypes.md)
-[Next Page](.\README_PhysicalScalars.md)
-
-
+[Home Page](./README.md)
+[Prev Page](./README_MutableTypes.md)
+[Next Page](./README_PhysicalScalars.md)

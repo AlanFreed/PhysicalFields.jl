@@ -59,6 +59,10 @@ A physical tensor has a numeric quantity represented as a matrix or two-dimensio
 
 ## Version History
 
+### Version 1.5.0
+
+Introduced types `VectorOfPhysicalUnits,`   `MatrixOfPhysicalUnits,` `VectorOfPhysicalScalars` and `MatrixOfPhysicalScalars,` which differs from `ArrayOfPhysicalScalars` wherein all entries have the same set of physical units.  In  `VectorOfPhysicalUnits,`   `MatrixOfPhysicalUnits,` `VectorOfPhysicalScalars` and `MatrixOfPhysicalScalars` each vector or matrix element has its own physical units.
+
 ### Version 1.4.0
 
 Introduced the abstract type `ArrayOfPhysicalFields` which is now inherited by types: `ArrayOfPhysicalScalars,` `ArrayOfPhysicalVectors` and `ArrayOfPhysicalTensors.`

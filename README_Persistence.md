@@ -1,5 +1,5 @@
 
-[Return to Main Document](.\README.md)
+[Return to Main Document](./README.md)
 
 # Persistence
 
@@ -99,6 +99,6 @@ For singleton values, like calls of the form `fromFile(Bool, json_stream)` will 
 
 Objects that are matrices and higher-order arrays are stored to file in a column vector format in this module, which are then reshaped into their correct array structures when read back in from file.
 
-[Prev Page](.\README.md)
-[Next Page](.\README_MutableTypes.md)
+[Prev Page](./README.md)
+[Next Page](./README_MutableTypes.md)
 

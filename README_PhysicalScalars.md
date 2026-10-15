@@ -2,9 +2,9 @@
 
 # PhysicalScalars
 
-A physical scalar, or scalar field, is a number associated with a set of physical units, e.g., temperature.
+A physical scalar, or scalar field, is a number associated with a set of physical units, e.g., a temperature.
 
-## Concrete Types
+## A PhysicalScalar
 
 For a scalar field, use the type
 ```
@@ -15,22 +15,9 @@ end
 ```
 The value held by a scalar is mutable.
 
-For an array of scalar fields, use the type
-```
-struct ArrayOfPhysicalScalars <: ArrayOfPhysicalFields
-    array::MVector          # array holding values of a physical scalar
-    units::PhysicalUnits    # physical units of the scalar array
-end
-```
-where all entries in the array have the same physical units. These array entries are mutable.
+### Constructors
 
-## Constructors
-
-There are two kinds of internal constructors. The first constructor assigns zero(s) to its field, while the other constructors assign value(s) to this field.
-
-### PhysicalScalar
-
-Constructors
+There are three constructor options to choose from
 ```
 function PhysicalScalar(units::PhysicalUnits)
 function PhysicalScalar(value::Real, units::PhysicalUnits)
@@ -38,15 +25,70 @@ function PhysicalScalar(value::MReal, units::PhysicalUnits)
 ```
 These constructors will return a new scalar object whose physical units are specified by argument `units.` The first constructor assigns a numeric value of zero to the scalar field, while the other two constructors assign to the scalar that numeric value specified by argument `value.`
 
-### ArrayOfPhysicalScalars
+## An ArrayOfPhysicalScalars
 
-Constructors
+For an array of scalar fields, use the type
+```
+struct ArrayOfPhysicalScalars <: ArrayOfPhysicalFields
+    array::MVector          # array holding values of a physical scalar
+    units::PhysicalUnits    # physical units of the scalar array
+end
+```
+where all entries in the array have the same physical units. These array entries are mutable. 
+
+### Constructors
+
+There are three constructors to choose from
 ```
 function ArrayOfPhysicalScalars(array_length::Integer, units::PhysicalUnits)
 function ArrayOfPhysicalScalars(scalar_values::Vector{<:Real}, units::PhysicalUnits)
 function ArrayOfPhysicalScalars(scalar_values::MVector, units::PhysicalUnits)
 ```
 These constructors will return a new array of scalars whose length is specified by argument `array_length,` wherein all elements of the array will have physical units specified by argument `units.` The first constructor creates an array with zero values, while the remaining constructors assign values to this internal array, as supplied by the vector argument `scalar_values,` which is an array of dimension `array_length.`
+
+## A VectorOfPhysicalScalars
+
+In many applications, e.g., thermodynamics, one collects an array of physical scalars, gathered as a vector, wherein each entry has its own set of physical units, in which case one would select the  type
+```
+struct VectorOfPhysicalScalars <: ArrayOfPhysicalFields
+    values::MVector                 # vector of physical values
+    units::VectorOfPhysicalUnits    # vector of physical units
+end
+```
+where the value of a physical scalar, say `scalar.value,` is held as an element in vector `values,` while its units `scalar.units` are held as an element in vector `units,` both at the same location. 
+
+### Constructors
+
+There are three constructors to select from. They are
+```
+function VectorOfPhysicalScalars(length::Integer)
+function VectorOfPhysicalScalars(values::MVector, units::VectorOfPhysicalUnits)
+function VectorOfPhysicalScalars(values::Vector{<:Real}, units::VectorOfPhysicalUnits)
+```
+These constructors will return a new vector of scalars whose length is specified by argument `length,` wherein all elements of the vector have their own set of physical units specified by argument `units.` The first constructor creates a vector with dimensionless values, while the remaining constructors assign scalars to this internal vector whose `values` and `units` are supplied as separate vectors with dimension `length.`
+
+A `VectorOfPhysicalScalars` is distinct from an `ArrayOfPhysicalScalars.` In the former, each element of the vector has its own set of physical units. In the latter, all elements have the same set of physical units.
+
+## A MatrixOfPhysicalScalars
+
+Whenever one collects an array of physical scalars, gathered as a matrix, e.g., a thermodynamic Jacobian, wherein each entry has its own set of physical units, then one would select the type
+```
+struct MatrixOfPhysicalScalars <: ArrayOfPhysicalFields
+    values::MMatrix                 # matrix of physical values
+    units::MatrixOfPhysicalUnits    # matrix of physical units
+end
+```
+wherein a scalar field has its value stored in `values` and its physical units stored in `units,` both at the same location. 
+
+### Constructors
+
+There are three constructors to choose from
+```
+function MatrixOfPhysicalScalars(rows::Integer, columns::Integer)
+function MatrixOfPhysicalScalars(values::MMatrix, units::MatrixOfPhysicalUnits)
+function MatrixOfPhysicalScalars(values::Matrix{<:Real}, units::MatrixOfPhysicalUnits)
+```
+where the matrix has dimension `rows`×`columns.`
 
 # Methods
 ## Get and Set!
@@ -57,15 +99,23 @@ These functions are to be used to retrieve and assign `Real` values from/to a `P
 function get(y::PhysicalScalar)::Real
 function set!(y::PhysicalScalar, x::Real)
 ```
-
-While these functions are to be used to retrieve and assign a `PhysicalScalar` from/to an `ArrayOfPhysicalScalars.`
-
+The following functions are to be used to retrieve and assign a `PhysicalScalar` from/to an `ArrayOfPhysicalScalars.`
 ```
 function getindex(y::ArrayOfPhysicalScalars, index::Integer)::PhysicalScalar
 function setindex!(y::ArrayOfPhysicalScalars, scalar::PhysicalScalar, index::Integer)
 ```
+while the following functions retrieve and assign a `PhysicalScalar` from/to a `VectorOfPhysicalScalars` via
+```
+function getindex(y::VectorOfPhysicalScalars, index::Integer)::PhysicalScalar
+function setindex!(y::VectorOfPhysicalScalars, scalar::PhysicalScalar, index::Integer)
+```
+or retrieve and assign a `PhysicalScalar` from/to a `MatrixOfPhysicalScalars` via
+```
+function getindex(y::MatrixOfPhysicalScalars, row::Integer, column::Integer)::PhysicalScalar
+function setindex!(y::MatrixOfPhysicalScalars, scalar::PhysicalScalar, row::Integer, column::Integer)
+```
 
-Because these extend the `Base` functions `getindex` and `setindex!`, the bracket notation `[]` can be used to retrieve and assign individual scalar fields belonging to an instance of `ArrayOfPhysicalScalars.`
+Because these extend the `Base` functions `getindex` and `setindex!`, the bracket notation `[]` can be used to retrieve and assign individual scalar fields belonging to instances of `ArrayOfPhysicalScalars,` `VectorOfPhysicalScalars` and `MatrixOfPhysicalScalars.`
 
 ## Copy
 
@@ -73,6 +123,8 @@ For making a copy, use
 ```
 function copy(y::PhysicalScalar)::PhysicalScalar
 function copy(y::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
+function copy(y::VectorOfPhysicalScalars)::VectorOfPhysicalScalars
+function copy(y::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
 ```
 
 ## Readers and Writers
@@ -81,13 +133,14 @@ Conversion of a scalar field into a string is provided for by the method
 ```
 function toString(y::PhysicalScalar)::String
 ```
-
 No parser is provided here.
 
 To write a scalar or an array of scalars to a JSON file, one can call
 ```
 function toFile(y::PhysicalScalar, json_stream::IOStream)
 function toFile(y::ArrayOfPhysicalScalars, json_stream::IOStream)
+function toFile(y::VectorOfPhysicalScalars, json_stream::IOStream)
+function toFile(y::MatrixOfPhysicalScalars, json_stream::IOStream)
 ```
 where argument `json_stream` comes from a call to `openJSONWriter` found in [README.md](.\README.md).
 
@@ -95,6 +148,8 @@ To read a scalar or an array of scalars from a JSON file, one can call
 ```
 function fromFile(::Type{PhysicalScalar}, json_stream::IOStream)::PhysicalScalar
 function fromFile(::Type{ArrayOfPhysicalScalars}, json_stream::IOStream)::ArrayOfPhysicalScalars
+function fromFile(::Type{VectorOfPhysicalScalars}, json_stream::IOStream)::VectorOfPhysicalScalars
+function fromFile(::Type{MatrixOfPhysicalScalars}, json_stream::IOStream)::MatrixOfPhysicalScalars
 ```
 where argument `json_stream` comes from a call to `openJSONReader` found [here](.\README_Persistence.md).
 
@@ -138,13 +193,35 @@ function isCGS(y::ArrayOfPhysicalScalars)::Bool
 
 The following operators have been overloaded so that they can handle objects of type `PhysicalScalar,` whenever such operations make sense, e.g., one cannot add two scalars with different units; however, one can multiply them. 
 
+### PhysicalScalars
+
 The overloaded logical operators include: `==`, `≠`, `≈`, `<`, `≤`, `≥` and `>`. 
 
 The overloaded unary operators include: `+` and `-`. 
 
 The overloaded binary operators include: `+`, `-`, `*`, `/` and `^`.
 
-## Math functions for PhysicalScalar
+### ArrayOfPhysicalScalars
+
+The overloaded logical operators include: `==`, `≠` and `≈`. 
+
+The overloaded binary operators include: `+`, `-` and `*`.
+
+### VectorOfPhysicalScalars
+
+The overloaded logical operators include: `==`, `≠` and `≈`. 
+
+The overloaded binary operators include: `+`, `-` and `*`.
+
+### MatrixOfPhysicalScalars
+
+The overloaded logical operators include: `==`, `≠` and `≈`. 
+
+The overloaded binary operators include: `+`, `-` and `*`.
+
+## Math functions
+
+### PhysicalScalar
 
 The following methods are math functions that return a physical scalar and can handle arguments that are scalars with physical dimensions.
 
@@ -186,6 +263,12 @@ function exp2(y::PhysicalScalar)::Real
 function exp10(y::PhysicalScalar)::Real
 ```
 These are the same functions that have been extended for mutable numbers found [here](./README_MutableTypes.md).
+
+### MatrixOfPhysicalScalars
+
+```
+function inv(y::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
+```
 
 [Home Page](./README.md)
 [Prev Page](./README_PhysicalUnits.md)
