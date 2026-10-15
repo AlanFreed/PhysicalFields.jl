@@ -23,39 +23,47 @@ using
 export
     # abstract types
 
-    MNumber,                # <: Number,  base type for mutable numbers.
-    PhysicalField,          # An abstract type for physical fields.
-    ArrayOfPhysicalFields,  # An abstract type for an array of physical fields.
+    MNumber,                  # <: Number,  base type for mutable numbers.
+    PhysicalField,            # An abstract type for physical fields.
+    ArrayOfPhysicalFields,    # An abstract type for an array of physical fields.
                             
     # concrete types
 
-    MBoolean,               #             a mutable boolean.
-    MInteger,               # <: MNumber, a mutable integer number.
-    MReal,                  # <: MNumber, a mutable real/floating-point number.
+    MBoolean,                 #             a mutable boolean.
+    MInteger,                 # <: MNumber, a mutable integer number.
+    MReal,                    # <: MNumber, a mutable real/floating-point number.
 
-    MVector,                # A fixed dimension vector with mutable elements.
-    MMatrix,                # A fixed dimension matrix with mutable elements.
-    MArray,                 # A fixed dimension 3D array with mutable elements.
+    MVector,                  # A fixed dimension vector with mutable elements.
+    MMatrix,                  # A fixed dimension matrix with mutable elements.
+    MArray,                   # A fixed dimension 3D array with mutable elements.
     
-    Bool,                   # Type casting from MBoolean to Bool.
-    Integer,                # Type casting from MInteger to Integer.
-    Real,                   # Type casting from MReal to Real.
-    Vector,                 # Type casting from MVector to Vector.
-    Matrix,                 # Type casting from MMatrix to Matrix.
-    Array,                  # Type casting from MArray to Array.
+    Bool,                     # Type casting from MBoolean to Bool.
+    Integer,                  # Type casting from MInteger to Integer.
+    Real,                     # Type casting from MReal to Real.
+    Vector,                   # Type casting from MVector to Vector.
+    Matrix,                   # Type casting from MMatrix to Matrix.
+    Array,                    # Type casting from MArray to Array.
     
-    PhysicalUnits,          # Type for systems of physical units.
-    #   units included:     # length, mass, amount of substance, time,
-                            # temperature, electric current, and luminous
-                            # intensity
+    PhysicalUnits,            # Type for systems of physical units.
+    #   units included:       # length, mass, amount of substance, time,
+                              # temperature, electric current, and luminous
+                              # intensity
 
-    PhysicalScalar,         # <: PhysicalField,  A number with units.
-    PhysicalVector,         # <: PhysicalField,  A vector (array)  with units.
-    PhysicalTensor,         # <: PhysicalField,  A tensor (matrix) with units.
-    ArrayOfPhysicalScalars, # <: ArrayOfPhysicalFields, scalars with same set of units.
-    ArrayOfPhysicalVectors, # <: ArrayOfPhysicalFields, vectors with same length and units.
-    ArrayOfPhysicalTensors, # <: ArrayOfPhysicalFields, tensors with same size and units.
+    PhysicalScalar,           # <: PhysicalField,  A number with units.
+    PhysicalVector,           # <: PhysicalField,  A vector (array)  with units.
+    PhysicalTensor,           # <: PhysicalField,  A tensor (matrix) with units.
+    
+    # All array entries have the same physical units.
+    ArrayOfPhysicalScalars,   # <: ArrayOfPhysicalFields, scalars with same set of units.
+    ArrayOfPhysicalVectors,   # <: ArrayOfPhysicalFields, vectors with same length and units.
+    ArrayOfPhysicalTensors,   # <: ArrayOfPhysicalFields, tensors with same size and units.
 
+    # Each array entry has its own physical units.
+    VectorOfPhysicalUnits,    # A 1D array of physical units with mutable elements.
+    MatrixOfPhysicalUnits,    # A 2D array of physical units with mutable elements.
+    VectorOfPhysicalScalars,  # A vector of physical scalars with mutable elements.
+    MatrixOfPhysicalScalars,  # A matrix of physical scalars with mutable elements.
+    
     # functions
 
     openJSONReader,

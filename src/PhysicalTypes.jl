@@ -120,6 +120,69 @@ struct ArrayOfPhysicalTensors <: ArrayOfPhysicalFields
     end
 end
 
+struct VectorOfPhysicalScalars <: ArrayOfPhysicalFields
+    values::MVector                 # vector of physical values
+    units::VectorOfPhysicalUnits    # vector of physical units
+    
+    # constructors
+    
+    function VectorOfPhysicalScalars(length::Integer)
+        values = MVector(length)
+        units  = VectorOfPhysicalUnits(length)
+        
+        new(values, units)
+    end
+    
+    function VectorOfPhysicalScalars(values::MVector, units::VectorOfPhysicalUnits)
+        if values.len ≠ units.len
+            error("Vector dimensions for 'values' and 'units' are not equivalent.")
+        end
+        
+        new(values, units)
+    end
+    
+    function VectorOfPhysicalScalars(values::Vector{<:Real}, units::VectorOfPhysicalUnits)
+        if length(values) ≠ units.len
+            error("Vector dimensions for 'values' and 'units' are not equivalent.")
+        end
+        vecValues = MVector(values)
+        
+        new(vecValues, units)
+    end
+end
+
+struct MatrixOfPhysicalScalars <: ArrayOfPhysicalFields
+    values::MMatrix                 # matrix of physical values
+    units::MatrixOfPhysicalUnits    # matrix of physical units
+    
+    # constructors
+    
+    function MatrixOfPhysicalScalars(rows::Integer, columns::Integer)
+        values = MMatrix(rows, columns)
+        units  = MatrixOfPhysicalUnits(rows, columns)
+        
+        new(values, units)
+    end
+    
+    function MatrixOfPhysicalScalars(values::MMatrix, units::MatrixOfPhysicalUnits)
+        if values.rows ≠ units.rows || values.cols ≠ units.cols
+            error("Matrix dimensions for 'values' and 'units' are not equivalent.")
+        end
+        
+        new(values, units)
+    end
+    
+    function MatrixOfPhysicalScalars(values::Matrix{<:Real}, units::MatrixOfPhysicalUnits)
+        (rows, columns) = size(values)
+        if rows ≠ units.rows || columns ≠ units.cols
+            error("Matrix dimensions for 'values' and 'units' are not equivalent.")
+        end
+        mtxValues = MMatrix(values)
+        
+        new(mtxValues, units)
+    end
+end
+
 #=
 -------------------------------------------------------------------------------
 =#
@@ -282,6 +345,50 @@ function Base.:(setindex!)(y::ArrayOfPhysicalTensors, tensor::PhysicalTensor, in
     return nothing
 end
 
+function Base.:(getindex)(y::VectorOfPhysicalScalars, index::Integer)::PhysicalScalar
+    if index < 1 || index > y.values.len
+        error("Admissible vector indices are ∈ [1…" + string(y.values.len) + "].")
+    end
+    
+    return PhysicalScalar(y.values[index], y.units[index])
+end
+
+function Base.:(setindex!)(y::VectorOfPhysicalScalars, scalar::PhysicalScalar, index::Integer)
+    if index < 1 || index > y.values.len
+        error("Admissible vector indices are ∈ [1…" + string(y.values.len) + "].")
+    end
+    
+    y.values[index] = scalar.value
+    y.units[index]  = scalar.units
+    
+    return nothing
+end
+
+function Base.:(getindex)(y::MatrixOfPhysicalScalars, 
+                          row::Integer, column::Integer)::PhysicalScalar
+    if (row < 1 || row > y.values.rows || column < 1 || column > y.values.cols)
+        msg = "Admissible matrix indices are ∈ [1…" + string(y.values.rows)
+        msg = msg + ", 1…" + string(y.values.cols) + "]."
+        error(msg)
+    end
+    
+    return PhysicalScalar(y.values[row,column], y.units[row,column])
+end
+
+function Base.:(setindex!)(y::MatrixOfPhysicalScalars, scalar::PhysicalScalar, 
+                           row::Integer, column::Integer)
+    if (row < 1 || row > y.values.rows || column < 1 || column > y.values.cols)
+        msg = "Admissible matrix indices are ∈ [1…" + string(y.values.rows)
+        msg = msg + ", 1…" + string(y.values.cols) + "]."
+        error(msg)
+    end
+    
+    y.values[row, column] = scalar.value
+    y.units[row, column]  = scalar.units
+    
+    return nothing
+end
+
 #=
 -------------------------------------------------------------------------------
 =#
@@ -427,6 +534,9 @@ StructTypes.StructType(::Type{ArrayOfPhysicalScalars}) = StructTypes.Struct()
 StructTypes.StructType(::Type{ArrayOfPhysicalVectors}) = StructTypes.Struct()
 StructTypes.StructType(::Type{ArrayOfPhysicalTensors}) = StructTypes.Struct()
 
+StructTypes.StructType(::Type{VectorOfPhysicalScalars}) = StructTypes.Struct()
+StructTypes.StructType(::Type{MatrixOfPhysicalScalars}) = StructTypes.Struct()
+
 function toFile(y::PhysicalScalar, json_stream::IOStream)
     if isopen(json_stream)
         JSON3.write(json_stream, y)
@@ -493,6 +603,28 @@ function toFile(y::ArrayOfPhysicalTensors, json_stream::IOStream)
     return nothing
 end
 
+function toFile(y::VectorOfPhysicalScalars, json_stream::IOStream)
+    if isopen(json_stream)
+        JSON3.write(json_stream, y)
+        write(json_stream, '\n')
+    else
+        error("The supplied JSON stream is not open.")
+    end
+    flush(json_stream)
+    return nothing
+end
+
+function toFile(y::MatrixOfPhysicalScalars, json_stream::IOStream)
+    if isopen(json_stream)
+        JSON3.write(json_stream, y)
+        write(json_stream, '\n')
+    else
+        error("The supplied JSON stream is not open.")
+    end
+    flush(json_stream)
+    return nothing
+end
+
 function fromFile(::Type{PhysicalScalar}, json_stream::IOStream)::PhysicalScalar
     if isopen(json_stream)
         ps = JSON3.read(readline(json_stream), PhysicalScalar)
@@ -547,3 +679,251 @@ function fromFile(::Type{ArrayOfPhysicalTensors}, json_stream::IOStream)::ArrayO
     return apt
 end
 
+function fromFile(::Type{VectorOfPhysicalScalars}, json_stream::IOStream)::VectorOfPhysicalScalars
+    if isopen(json_stream)
+        vps = JSON3.read(readline(json_stream), VectorOfPhysicalScalars)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+    return vps
+end
+
+function fromFile(::Type{MatrixOfPhysicalScalars}, json_stream::IOStream)::MatrixOfPhysicalScalars
+    if isopen(json_stream)
+        mps = JSON3.read(readline(json_stream), MatrixOfPhysicalScalars)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+    return mps
+end
+
+#=
+-------------------------------------------------------------------------------
+=#
+
+# Overloaded operators: ==, ≈, ≠
+
+function Base.:(==)(y::VectorOfPhysicalScalars, z::VectorOfPhysicalScalars)::Bool
+    if y.values == z.values && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:(==)(y::MatrixOfPhysicalScalars, z::MatrixOfPhysicalScalars)::Bool
+    if y.values == z.values && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:≈(y::VectorOfPhysicalScalars, z::VectorOfPhysicalScalars)::Bool
+    if y.values ≈ z.values && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:≈(MatrixOfPhysicalScalars, z::MatrixOfPhysicalScalars)::Bool
+    if y.values ≈ z.values && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:≠(y::VectorOfPhysicalScalars, z::VectorOfPhysicalScalars)::Bool
+    if y.values ≠ z.values || y.units ≠ z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:≠(y::MatrixOfPhysicalScalars, z::MatrixOfPhysicalScalars)::Bool
+    if y.values ≠ z.values || y.units ≠ z.units
+        return true
+    else
+        return false
+    end
+end
+
+# Overloaded operators: +, -, *
+
+function Base.:+(y::VectorOfPhysicalScalars, z::VectorOfPhysicalScalars)::VectorOfPhysicalScalars
+    if y.values.len ≠ z.values.len
+        msg = "Vector addition requires vectors with the same length."
+        throw(DimensionMismatch(msg))
+    end
+    if y.units ≠ z.units
+        error("Vector addition requires vectors with the same units.")
+    end
+    
+    len = y.values.len
+    vec = VectorOfPhysicalScalars(len)
+    for i in 1:len
+        vec.values[i] = y.values[i] + z.values[i]
+        vec.units[i]  = y.units[i]
+    end
+    
+    return vec
+end
+
+function Base.:+(y::MatrixOfPhysicalScalars, z::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
+    if y.values.rows ≠ z.values.rows || y.values.cols ≠ z.values.cols
+        msg = "Matrix addition requires matrices with the same dimensions."
+        throw(DimensionMismatch(msg))
+    end
+    if y.units ≠ z.units
+        error("Matrix addition requires matrices with the same units.")
+    end
+    
+    rows = y.values.rows
+    cols = y.values.cols
+    mtx  = MatrixOfPhysicalScalars(rows, cols)
+    for i in 1:rows
+        for j in 1:cols
+            mtx.values[i,j] = y.values[i,j] + z.values[i,j]
+            mtx.units[i,j]  = y.units[i,j]
+        end
+    end
+    
+    return mtx
+end
+
+function Base.:-(y::VectorOfPhysicalScalars, z::VectorOfPhysicalScalars)::VectorOfPhysicalScalars
+    if y.values.len ≠ z.values.len
+        msg = "Vector subtraction requires vectors with the same length."
+        throw(DimensionMismatch(msg))
+    end
+    if y.units ≠ z.units
+        error("Vector subtraction requires vectors with the same units.")
+    end
+    
+    len = y.values.len
+    vec = VectorOfPhysicalScalars(len)
+    for i in 1:len
+        vec.values[i] = y.values[i] - z.values[i]
+        vec.units[i]  = y.units[i]
+    end
+    
+    return vec
+end
+
+function Base.:-(y::MatrixOfPhysicalScalars, z::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
+    if y.values.rows ≠ z.values.rows || y.values.cols ≠ z.values.cols
+        msg = "Matrix subtraction requires matrices with the same dimensions."
+        throw(DimensionMismatch(msg))
+    end
+    if y.units ≠ z.units
+        error("Matrix subtraction requires matrices with the same units.")
+    end
+    
+    rows = y.values.rows
+    cols = y.values.cols
+    mtx  = MatrixOfPhysicalScalars(rows, cols)
+    for i in 1:rows
+        for j in 1:cols
+            mtx.values[i,j] = y.values[i,j] - z.values[i,j]
+            mtx.units[i,j]  = y.units[i,j]
+        end
+    end
+    
+    return mtx
+end
+
+function Base.:*(y::Real, z::VectorOfPhysicalScalars)::VectorOfPhysicalScalars
+    len = z.values.len
+    vec = VectorOfPhysicalScalars(len)
+    for i in 1:len
+        vec.values[i] = y * z.values[i]
+        vec.units[i]  = z.units[i]
+    end
+    
+    return vec
+end
+
+function Base.:*(y::Real, z::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
+    rows = z.values.rows
+    cols = z.values.cols
+    mtx  = MatrixOfPhysicalScalars(rows, cols)
+    for i in 1:rows
+        for j in 1:cols
+            mtx.values[i,j] = y * z.values[i,j]
+            mtx.units[i,j]  = z.units[i,j]
+        end
+    end
+    
+    return mtx
+end
+
+function Base.:*(y::PhysicalScalar, z::VectorOfPhysicalScalars)::VectorOfPhysicalScalars
+    len = z.values.len
+    vec = VectorOfPhysicalScalars(len)
+    for i in 1:len
+        vec.values[i] = y.value * z.values[i]
+        vec.units[i]  = y.units + z.units[i]
+    end
+    
+    return vec
+end
+
+function Base.:*(y::PhysicalScalar, z::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
+    rows = z.values.rows
+    cols = z.values.cols
+    mtx  = MatrixOfPhysicalScalars(rows, cols)
+    for i in 1:rows
+        for j in 1:cols
+            mtx.values[i,j] = y.value * z.values[i,j]
+            mtx.units[i,j]  = y.units + z.units[i,j]
+        end
+    end
+    
+    return mtx
+end
+
+function Base.:*(y::MatrixOfPhysicalScalars, z::VectorOfPhysicalScalars)::VectorOfPhysicalScalars
+    if y.values.cols ≠ z.values.len
+        msg = "Dimensions are not compatible for a matrix-vector contraction."
+        throw(DimensionMismatch(msg))
+    end
+    
+    rows = y.values.rows
+    cols = y.values.cols
+    vec  = VectorOfPhysicalScalars(rows)
+    for i in 1:rows
+        vec.units[i] = y.units[i,i] + z.units[i]
+        sum = 0.0
+        for j in 1:cols
+            sum += y.values[i,j] * z.values[j]
+            if i ≠ j
+                if vec.units[i] ≠ y.units[i,j] + z.units[j]
+                    msg = "Units are not compatible for a matrix-vector contraction."
+                    throw(DimensionMismatch(msg))
+                end
+            end
+        end
+        vec.values[i] = sum
+    end
+    
+    return vec
+end
+
+function Base.:(inv)(y::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
+    rows = y.values.rows
+    cols = y.values.cols
+
+    mtxInv = MatrixOfPhysicalScalars(cols, rows)
+    valInv = inv(y.values)
+    for i in 1:cols
+        for j in 1:rows
+            mtxInv.values[i,j] = valInv[i,j]
+            mtxInv.units[i,j]  = -y.units[j,i]
+        end
+    end
+    
+    return mtxInv
+end
