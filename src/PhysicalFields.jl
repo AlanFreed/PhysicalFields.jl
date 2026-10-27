@@ -16,26 +16,26 @@ import
     Printf: @sprintf
 
 using
-    JSON3,
-    LinearAlgebra,
-    StructTypes
+    JSON,
+    LinearAlgebra
 
 export
     # abstract types
 
-    MNumber,                  # <: Number,  base type for mutable numbers.
+    MNumbers,                 # An abstract type for mutable numbers.
+    MArrays,                  # An abstract type for mutable arrays.
     PhysicalField,            # An abstract type for physical fields.
     ArrayOfPhysicalFields,    # An abstract type for an array of physical fields.
                             
     # concrete types
 
-    MBoolean,                 #             a mutable boolean.
+    MBoolean,                 # <: MNumber, a mutable boolean.
     MInteger,                 # <: MNumber, a mutable integer number.
     MReal,                    # <: MNumber, a mutable real/floating-point number.
 
-    MVector,                  # A fixed dimension vector with mutable elements.
-    MMatrix,                  # A fixed dimension matrix with mutable elements.
-    MArray,                   # A fixed dimension 3D array with mutable elements.
+    MVector,                  # <: MArrays, a fixed sized vector with mutable elements.
+    MMatrix,                  # <: MArrays, a fixed sized matrix with mutable elements.
+    MArray,                   # <: MArrays, a fixed sized 3D array with mutable elements.
     
     Bool,                     # Type casting from MBoolean to Bool.
     Integer,                  # Type casting from MInteger to Integer.

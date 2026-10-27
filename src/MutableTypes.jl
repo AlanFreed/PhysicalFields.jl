@@ -14,15 +14,7 @@ Note: Types MVector, MMatrix and MArray exported here are distinct from those
 
 # Exported base types with mutable values.
 
-"""
-# MNumber
-
-An abstract type for mutable numbers.
-```julia
-    abstract type MNumber <: Number end
-```
-"""
-abstract type MNumber <: Number end
+abstract type MNumbers <: Number end
 
 # All constructors are internal constructors.
 
@@ -31,7 +23,7 @@ abstract type MNumber <: Number end
 
 A mutable boolean type.
 ```julia
-    mutable struct MBoolean
+    mutable struct MBoolean <: MNumbers
         b::Bool     # Bool <: Integer <: Real <: Number
     end
 ```
@@ -82,7 +74,7 @@ Enable instances of type `MBoolean` to interact with instances of type `Bool` in
     function toString(y::MBoolean)::String
 ```
 """
-mutable struct MBoolean
+mutable struct MBoolean <: MNumbers
     b::Bool  # Bool <: Integer <: Real <: Number
 
     # constructors
@@ -101,7 +93,7 @@ end
 
 A mutable integer type.
 ```julia
-    mutable struct MInteger <: MNumber
+    mutable struct MInteger <: MNumbers
         n::Int64    # Int64 <: Signed <: Integer <: Real <: Number
     end
 ```
@@ -166,7 +158,7 @@ Enable instances of type `MInteger` to interact with instances of type `Integer`
     abs, sign, sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh, log, log2, log10, exp, exp2, exp10 and sqrt
 ```
 """
-mutable struct MInteger <: MNumber
+mutable struct MInteger <: MNumbers
     n::Int64  # Int64 <: Signed <: Integer <: Real <: Number
 
     # constructors
@@ -185,7 +177,7 @@ end
 
 A mutable real type.
 ```julia
-    mutable struct MReal <: MNumber
+    mutable struct MReal <: MNumbers
         n::Float64  # Float64 <: AbstractFloat <: Real <: Number
     end
 ```
@@ -250,8 +242,8 @@ Enable instances of type `MReal` to interact with instances of type `Real` in a 
     abs, round, ceil, floor, sign, sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh, log, log2, log10, exp, exp2, exp10 and sqrt
 ```
 """
-mutable struct MReal <: MNumber
-    n::Float64  # Float64 <: AbstractFloat <: Real <: Number
+mutable struct MReal <: MNumbers
+    x::Float64  # Float64 <: AbstractFloat <: Real <: Number
 
     # constructors
 
@@ -270,12 +262,14 @@ end
 
 # Exported arrays with mutable values, i.e., mutable array entries.
 
+abstract type MArrays end
+
 """
 # MVector
 
 Instances of this type are vectors with a fixed length whose elements are dynamically allocated and assignable.
 ```julia
-    struct MVector
+    struct MVector <: MArrays
         len::UInt32
         vec::Vector{Float64}
     end
@@ -340,7 +334,6 @@ Enable instances of type `MVector` to interact with instances of types `Vector` 
     function fromFile(::Type{MVector}, json_stream::IOStream)::MVector
     function toString(v::MVector)::String
 ```
-
 ## Math Functions
 
 ```julia
@@ -352,7 +345,7 @@ Enable instances of type `MVector` to interact with instances of types `Vector` 
     function cross(y::MVector, z::Vector{<:Real})::MVector
 ```
 """
-struct MVector
+struct MVector <: MArrays
     len::UInt32             # A vector's length, which is fixed.
     vec::Vector{Float64}    # A column vector with mutable elements.
 
@@ -404,7 +397,7 @@ end # MVector
 
 Instances of this type are matrices with fixed dimensions, viz., fixed number of rows and columns, whose elements are dynamically allocated and assignable.
 ```julia
-    struct MMatrix
+    struct MMatrix <: MArrays
         rows::UInt16
         cols::UInt16
         vec::Vector{Float64}
@@ -496,7 +489,7 @@ Enable instances of type `MMatrix` to interact with instances of types `Matrix`,
     function matrixProduct(y::MVector, z::Vector{<:Real})::MMatrix
 ```
 """
-struct MMatrix
+struct MMatrix <: MArrays
     rows::UInt16            # Rows in a matrix, which is fixed.
     cols::UInt16            # Columns in a matrix, which is fixed.
     vec::Vector{Float64}    # A matrix reshaped as a column vector with mutable elements.
@@ -598,7 +591,7 @@ end # MMatrix
 
 Instances of this type are three dimensional arrays whose dimensions are fixed, but whose elements are dynamically allocated and assignable. `MArray`s are intended for use as containers of data, and as such, do not have many of the features that types `MVector` and `MMatrix` possess.
 ```julia
-    struct MArray
+    struct MArray <: MArrays
         pp::UInt16
         rows::UInt16
         cols::UInt16
@@ -637,7 +630,7 @@ creates an instance of type `MArray` of dimension `pages`⨉`rows`⨉`columns` w
     function fromFile(::Type{MArray}, json_stream::IOStream)::MArray
 ```
 """
-struct MArray
+struct MArray <: MArrays
     pp::UInt16              # Pages in an array, which is fixed.
                             #    Each page contains a rows×cols matrix.
     rows::UInt16            # Matrix rows in each page, which is fixed.
@@ -733,7 +726,7 @@ function Base.:(Integer)(mi::MInteger)::Integer
 end
 
 function Base.:(Real)(mr::MReal)::Real
-    return copy(mr.n)
+    return copy(mr.x)
 end
 
 function Base.:(Vector)(mv::MVector)::Vector{<:Real}
@@ -767,7 +760,7 @@ function Base.:(copy)(y::MInteger)::MInteger
 end # copy
 
 function Base.:(copy)(y::MReal)::MReal
-    return MReal(copy(y.n))
+    return MReal(copy(y.x))
 end # copy
 
 function Base.:(copy)(y::MVector)::MVector
@@ -804,140 +797,108 @@ end # size
 
 # persistence
 
-# Type declarations needed to work with JSON3 files.
+# Write a mutable number to a JSON file.
 
-StructTypes.StructType(::Type{MBoolean}) = StructTypes.Mutable()
-StructTypes.StructType(::Type{MInteger}) = StructTypes.Mutable()
-StructTypes.StructType(::Type{MReal})    = StructTypes.Mutable()
-
-StructTypes.StructType(::Type{MVector})  = StructTypes.Struct()
-StructTypes.StructType(::Type{MMatrix})  = StructTypes.Struct()
-StructTypes.StructType(::Type{MArray})   = StructTypes.Struct()
-
-# Write to a JSON file.
-
-function toFile(y::MBoolean, json_stream::IOStream)
+function toFile(y::MNumbers, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        if isa(y, MBoolean)
+            toFile(y.b, json_stream)
+        elseif isa(y, MInteger)
+            toFile(y.n, json_stream)
+        elseif isa(y, MReal)
+            toFile(y.x, json_stream)
+        else
+            error("The supplied mutable number is of unknown type.")
+        end
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
-    return nothing
-end
-
-function toFile(y::MInteger, json_stream::IOStream)
-    if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
-    else
-        error("The supplied JSON stream is not open.")
-    end
-    flush(json_stream)
-    return nothing
-end
-
-function toFile(y::MReal, json_stream::IOStream)
-    if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
-    else
-        error("The supplied JSON stream is not open.")
-    end
-    flush(json_stream)
     return nothing
 end
 
 # Write the various mutable arrays to a JSON file.
-
-function toFile(y::MVector, json_stream::IOStream)
+    
+function toFile(y::MArrays, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        if isa(y, MVector)
+            toFile(y.len,  json_stream)
+        elseif isa(y, MMatrix)
+            toFile(y.rows, json_stream)
+            toFile(y.cols, json_stream)
+        elseif isa(y, MArray)
+            toFile(y.pp,   json_stream)
+            toFile(y.rows, json_stream)
+            toFile(y.cols, json_stream)
+        else
+            error("The supplied mutable array is of unknown type.")
+        end
+        toFile(y.vec, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
-function toFile(y::MMatrix, json_stream::IOStream)
+# Read a mutable number from a JSON file.
+
+function fromFile(::Type{<:MNumbers}, json_stream::IOStream)::MNumbers
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        type = fromFile(String, json_stream)
+        if isequal(type, "MBoolean")
+            value = fromFile(Bool, json_stream)
+            return MBoolean(value)
+        elseif isequal(type, "MInteger")
+            value = fromFile(Int64, json_stream)
+            return MInteger(value)
+        elseif isequal(type, "MReal")
+            value = fromFile(Float64, json_stream)
+            return MReal(value)
+        else
+            error("The type read in was not that of a mutable number.")
+        end
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
-    return nothing
 end
 
-function toFile(y::MArray, json_stream::IOStream)
+# Read a mutable array from a JSON file.
+
+function fromFile(::Type{<:MArrays}, json_stream::IOStream)::MArrays
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        type = fromFile(String, json_stream)
+        if isequal(type, "MVector")
+            len = fromFile(UInt16, json_stream)
+            vec = fromFile(Vector{Float64}, json_stream)
+            return MVector(len, vec)
+        elseif isequal(type, "MMatrix")
+            rows = fromFile(UInt16, json_stream)
+            cols = fromFile(UInt16, json_stream)
+            vec  = fromFile(Vector{Float64}, json_stream)
+            return MMatrix(rows, cols, vec)
+        elseif type == "MArray"
+            pp   = fromFile(UInt16, json_stream)
+            rows = fromFile(UInt16, json_stream)
+            cols = fromFile(UInt16, json_stream)
+            vec  = fromFile(Vector{Float64}, json_stream)
+            return MArray(pp, rows, cols, vec)
+        else
+            error("The type read in was not that of a mutable array.")
+        end
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
-    return nothing
-end
-
-# Read from a JSON file.
-
-function fromFile(::Type{MBoolean}, json_stream::IOStream)::MBoolean
-    if isopen(json_stream)
-        y = JSON3.read(readline(json_stream), MBoolean)
-    else
-        error("The supplied JSON stream is not open.")
-    end
-    return y
-end
-
-function fromFile(::Type{MInteger}, json_stream::IOStream)::MInteger
-    if isopen(json_stream)
-        y = JSON3.read(readline(json_stream), MInteger)
-    else
-        error("The supplied JSON stream is not open.")
-    end
-    return y
-end
-
-function fromFile(::Type{MReal}, json_stream::IOStream)::MReal
-    if isopen(json_stream)
-        y = JSON3.read(readline(json_stream), MReal)
-    else
-        error("The supplied JSON stream is not open.")
-    end
-    return y
-end
-
-function fromFile(::Type{MVector}, json_stream::IOStream)::MVector
-    if isopen(json_stream)
-        y = JSON3.read(readline(json_stream), MVector)
-    else
-        error("The supplied JSON stream is not open.")
-    end
-    return y
-end
-
-function fromFile(::Type{MMatrix}, json_stream::IOStream)::MMatrix
-    if isopen(json_stream)
-        y = JSON3.read(readline(json_stream), MMatrix)
-    else
-        error("The supplied JSON stream is not open.")
-    end
-    return y
-end
-
-function fromFile(::Type{MArray}, json_stream::IOStream)::MArray
-    if isopen(json_stream)
-        y = JSON3.read(readline(json_stream), MArray)
-    else
-        error("The supplied JSON stream is not open.")
-    end
-    return y
 end
 
 #=
@@ -955,7 +916,7 @@ function toString(y::MInteger)::String
 end
 
 function toString(y::MReal)::String
-    return toString(y.n)
+    return toString(y.x)
 end
 
 # Method toString for mutable array types.
@@ -970,7 +931,7 @@ function toString(m::MMatrix)::String
     return toString(mtx)
 end
 
-# MArrays are used as containers, and as such, no toString method is provided.
+# MArray is used as a container, and as such, no toString method is provided.
 
 #=
 -------------------------------------------------------------------------------
@@ -987,7 +948,7 @@ function Base.:(get)(y::MInteger)::Integer
 end
 
 function Base.:(get)(y::MReal)::Real
-    return copy(y.n)
+    return copy(y.x)
 end
 
 function Base.:(getindex)(y::MVector, index::Integer)::Real
@@ -1067,9 +1028,9 @@ end
 
 function set!(y::MReal, value::Real)
     if value isa Float64
-        y.n = copy(value)
+        y.x = copy(value)
     else
-        y.n = convert(Float64, value)
+        y.x = convert(Float64, value)
     end
     return nothing
 end
@@ -1084,6 +1045,15 @@ function Base.:(setindex!)(y::MVector, value::Real, index::Integer)
     else
         y.vec[index] = convert(Float64, value)
     end
+    return nothing
+end
+
+function Base.:(setindex!)(y::MVector, value::MReal, index::Integer)
+    if index < 1 || index > y.len
+        msg = string("Admissible vector indices are ∈ [1…", string(y.len), "].")
+        throw(DimensionMismatch(msg))
+    end
+    y.vec[index] = copy(value.x)
     return nothing
 end
 
@@ -1107,6 +1077,22 @@ function Base.:(setindex!)(y::MMatrix, value::Vector{<:Real}, row::Integer)
     return nothing
 end
 
+function Base.:(setindex!)(y::MMatrix, value::MVector, row::Integer)
+    if length(value) ≠ y.cols
+        msg = "Dimensions for vector insertion into a matrix don't match."
+        throw(DimensionMismatch(msg))
+    end
+    if row < 1 || row > y.rows
+        msg = string("Admissible column indices are ∈ [1…", toString(y.rows), "].")
+        throw(DimensionMismatch(msg))
+    end
+    for i in 1:y.cols
+        index = row + (i - 1)*y.rows
+        y.vec[index] = copy(value.vec[i])
+    end
+    return nothing
+end
+
 function Base.:(setindex!)(y::MMatrix, value::Real, row::Integer, column::Integer)
     if row < 1 || row > y.rows || column < 1 || column > y.cols
         msg = string("Admissible matrix indices are ∈ [1…", toString(y.rows), ", 1…", toString(y.cols), "].")
@@ -1118,6 +1104,16 @@ function Base.:(setindex!)(y::MMatrix, value::Real, row::Integer, column::Intege
     else
         y.vec[index] = convert(Float64, value)
     end
+    return nothing
+end
+
+function Base.:(setindex!)(y::MMatrix, value::MReal, row::Integer, column::Integer)
+    if row < 1 || row > y.rows || column < 1 || column > y.cols
+        msg = string("Admissible matrix indices are ∈ [1…", toString(y.rows), ", 1…", toString(y.cols), "].")
+        throw(DimensionMismatch(msg))
+    end
+    index = row + (column - 1)*y.rows
+    y.vec[index] = copy(value.x)
     return nothing
 end
 
@@ -1144,6 +1140,26 @@ function Base.:(setindex!)(y::MArray, value::Matrix{<:Real}, page::Integer)
     return nothing
 end
 
+function Base.:(setindex!)(y::MArray, value::MMatrix, page::Integer)
+    if page < 1 || page > y.pp
+        msg = string("Admissible page indices are ∈ [1…", toString(y.pp), "].")
+        throw(DimensionMismatch(msg))
+    end
+    (rows, cols) = size(value)
+    if rows ≠ y.rows || cols ≠ y.cols
+        msg = "Dimensions for matrix insertion into an array don't match."
+        throw(DimensionMismatch(msg))
+    end
+    if row in 1:y.rows
+        for col in 1:y.cols
+            indexM = row + (col - 1)*y.rows
+            indexA = page + y.pp*((row - 1) + (col - 1)*y.rows)
+            y.vec[indexA] = copy(value.vec[indexM])
+        end
+    end
+    return nothing
+end
+
 function Base.:(setindex!)(y::MArray, value::Real, page::Integer, row::Integer, column::Integer)
     if (page < 1 || page > y.pp || row < 1 || row > y.rows ||
         column < 1 || column > y.cols)
@@ -1156,6 +1172,17 @@ function Base.:(setindex!)(y::MArray, value::Real, page::Integer, row::Integer, 
     else
         y.vec[index] = convert(Float64, value)
     end
+    return nothing
+end
+
+function Base.:(setindex!)(y::MArray, value::MReal, page::Integer, row::Integer, column::Integer)
+    if (page < 1 || page > y.pp || row < 1 || row > y.rows ||
+        column < 1 || column > y.cols)
+        msg = string("Admissible 3D array indices are ∈ [1…", toString(y.pp), ", 1…", toString(y.rows), ", 1…", toString(y.cols), "].")
+        throw(DimensionMismatch(msg))
+    end
+    index = page + (row - 1)*y.pp + (column - 1)*y.pp*y.rows
+    y.vec[index] = copy(value.x)
     return nothing
 end
 
@@ -1193,25 +1220,24 @@ function Base.:(==)(y::Integer, z::MInteger)::Bool
 end
 
 function Base.:(==)(y::MReal, z::MReal)::Bool
-    return isequal(y.n, z.n)
+    return isequal(y.x, z.x)
 end
 
 function Base.:(==)(y::MReal, z::MInteger)::Bool
-    return isequal(y.n, z.n)
+    return isequal(y.x, z.n)
 end
 
 function Base.:(==)(y::MInteger, z::MReal)::Bool
-    return isequal(y.n, z.n)
+    return isequal(y.n, z.x)
 end
 
 function Base.:(==)(y::MReal, z::Real)::Bool
-    return isequal(y.n, z)
+    return isequal(y.x, z)
 end
 
 function Base.:(==)(y::Real, z::MReal)::Bool
-    return isequal(y, z.n)
+    return isequal(y, z.x)
 end
-
 function Base.:(==)(y::MVector, z::MVector)::Bool
     if !isequal(y.len, z.len)
         return false
@@ -1421,23 +1447,23 @@ end
 # Operator ≈
 
 function Base.:≈(y::MReal, z::MReal)::Bool
-    return (y.n ≈ z.n)
+    return (y.x ≈ z.x)
 end
 
 function Base.:≈(y::MReal, z::MInteger)::Bool
-    return (y.n ≈ z.n)
+    return (y.x ≈ z.n)
 end
 
 function Base.:≈(y::MInteger, z::MReal)::Bool
-    return (y.n ≈ z.n)
+    return (y.n ≈ z.x)
 end
 
 function Base.:≈(y::MReal, z::Real)::Bool
-    return (y.n ≈ z)
+    return (y.x ≈ z)
 end
 
 function Base.:≈(y::Real, z::MReal)::Bool
-    return (y ≈ z.n)
+    return (y ≈ z.x)
 end
 
 function Base.:≈(y::MVector, z::MVector)::Bool
@@ -1578,7 +1604,7 @@ end
 -------------------------------------------------------------------------------
 =#
 
-# Overloaded operators belonging to instances of types IType and MType are:
+# Overloaded operators belonging to instances of type MNumbers are:
 #   <, ≤, ≥, >
 
 # Operator <
@@ -1596,23 +1622,23 @@ function Base.:<(y::Integer, z::MInteger)::Bool
 end
 
 function Base.:<(y::MReal, z::MReal)::Bool
-    return isless(y.n, z.n)
+    return isless(y.x, z.x)
 end
 
 function Base.:<(y::MReal, z::MInteger)::Bool
-    return isless(y.n, z.n)
+    return isless(y.x, z.n)
 end
 
 function Base.:<(y::MInteger, z::MReal)::Bool
-    return isless(y.n, z.n)
+    return isless(y.n, z.x)
 end
 
 function Base.:<(y::MReal, z::Real)::Bool
-    return isless(y.n, z)
+    return isless(y.x, z)
 end
 
 function Base.:<(y::Real, z::MReal)::Bool
-    return isless(y, z.n)
+    return isless(y, z.x)
 end
 
 # Operator >
@@ -1642,7 +1668,7 @@ function Base.:>(y::Integer, z::MInteger)::Bool
 end
 
 function Base.:>(y::MReal, z::MReal)::Bool
-    if isless(y.n, z.n) || isequal(y.n, z.n)
+    if isless(y.x, z.x) || isequal(y.x, z.x)
         return false
     else
         return true
@@ -1650,7 +1676,7 @@ function Base.:>(y::MReal, z::MReal)::Bool
 end
 
 function Base.:>(y::MReal, z::MInteger)::Bool
-    if isless(y.n, z.n) || isequal(y.n, z.n)
+    if isless(y.x, z.n) || isequal(y.x, z.n)
         return false
     else
         return true
@@ -1658,7 +1684,7 @@ function Base.:>(y::MReal, z::MInteger)::Bool
 end
 
 function Base.:>(y::MInteger, z::MReal)::Bool
-    if isless(y.n, z.n) || isequal(y.n, z.n)
+    if isless(y.n, z.x) || isequal(y.n, z.x)
         return false
     else
         return true
@@ -1666,7 +1692,7 @@ function Base.:>(y::MInteger, z::MReal)::Bool
 end
 
 function Base.:>(y::MReal, z::Real)::Bool
-    if isless(y.n, z) || isequal(y.n, z)
+    if isless(y.x, z) || isequal(y.x, z)
         return false
     else
         return true
@@ -1674,7 +1700,7 @@ function Base.:>(y::MReal, z::Real)::Bool
 end
 
 function Base.:>(y::Real, z::MReal)::Bool
-    if isless(y, z.n) || isequal(y, z.n)
+    if isless(y, z.x) || isequal(y, z.x)
         return false
     else
         return true
@@ -1696,23 +1722,23 @@ function Base.:≤(y::Integer, z::MInteger)::Bool
 end
 
 function Base.:≤(y::MReal, z::MReal)::Bool
-    return !(y.n > z.n)
+    return !(y.x > z.x)
 end
 
 function Base.:≤(y::MReal, z::MInteger)::Bool
-    return !(y.n > z.n)
+    return !(y.x > z.n)
 end
 
 function Base.:≤(y::MInteger, z::MReal)::Bool
-    return !(y.n > z.n)
+    return !(y.n > z.x)
 end
 
 function Base.:≤(y::MReal, z::Real)::Bool
-    return !(y.n > z)
+    return !(y.x > z)
 end
 
 function Base.:≤(y::Real, z::MReal)::Bool
-    return !(y > z.n)
+    return !(y > z.x)
 end
 
 # Operator ≥
@@ -1730,23 +1756,23 @@ function Base.:≥(y::Integer, z::MInteger)::Bool
 end
 
 function Base.:≥(y::MReal, z::MReal)::Bool
-    return !(y.n < z.n)
+    return !(y.x < z.x)
 end
 
 function Base.:≥(y::MReal, z::MInteger)::Bool
-    return !(y.n < z.n)
+    return !(y.x < z.n)
 end
 
 function Base.:≥(y::MInteger, z::MReal)::Bool
-    return !(y.n < z.n)
+    return !(y.n < z.x)
 end
 
 function Base.:≥(y::MReal, z::Real)::Bool
-    return !(y.n < z)
+    return !(y.x < z)
 end
 
 function Base.:≥(y::Real, z::MReal)::Bool
-    return !(y < z.n)
+    return !(y < z.x)
 end
 
 # Arithmetic operators.
@@ -1759,7 +1785,7 @@ function Base.:+(y::MInteger)::Integer
 end
 
 function Base.:+(y::MReal)::Real
-    return +y.n
+    return +y.x
 end
 
 function Base.:+(y::MVector)::MVector
@@ -1798,23 +1824,23 @@ function Base.:+(y::Integer, z::MInteger)::Integer
 end
 
 function Base.:+(y::MReal, z::MReal)::Real
-    return (y.n + z.n)
+    return (y.x + z.x)
 end
 
 function Base.:+(y::MReal, z::MInteger)::Real
-    return (y.n + z.n)
+    return (y.x + z.n)
 end
 
 function Base.:+(y::MInteger, z::MReal)::Real
-    return (y.n + z.n)
+    return (y.n + z.x)
 end
 
 function Base.:+(y::MReal, z::Real)::Real
-    return (y.n + z)
+    return (y.x + z)
 end
 
 function Base.:+(y::Real, z::MReal)::Real
-    return (y + z.n)
+    return (y + z.x)
 end
 
 function Base.:+(y::MVector, z::MVector)::MVector
@@ -1913,7 +1939,7 @@ function Base.:-(y::MInteger)::Integer
 end
 
 function Base.:-(y::MReal)::Real
-    return -y.n
+    return -y.x
 end
 
 function Base.:-(y::MVector)::MVector
@@ -1952,23 +1978,23 @@ function Base.:-(y::Integer, z::MInteger)::Integer
 end
 
 function Base.:-(y::MReal, z::MReal)::Real
-    return (y.n - z.n)
+    return (y.x - z.x)
 end
 
 function Base.:-(y::MReal, z::MInteger)::Real
-    return (y.n - z.n)
+    return (y.x - z.n)
 end
 
 function Base.:-(y::MInteger, z::MReal)::Real
-    return (y.n - z.n)
+    return (y.n - z.x)
 end
 
 function Base.:-(y::MReal, z::Real)::Real
-    return (y.n - z)
+    return (y.x - z)
 end
 
 function Base.:-(y::Real, z::MReal)::Real
-    return (y - z.n)
+    return (y - z.x)
 end
 
 function Base.:-(y::MVector, z::MVector)::MVector
@@ -2075,47 +2101,48 @@ function Base.:*(y::Integer, z::MInteger)::Integer
 end
 
 function Base.:*(y::MReal, z::MReal)::Real
-    return (y.n * z.n)
+    return (y.x * z.x)
 end
 
 function Base.:*(y::MReal, z::MInteger)::Real
-    return (y.n * z.n)
+    return (y.x * z.n)
 end
 
 function Base.:*(y::MInteger, z::MReal)::Real
-    return (y.n * z.n)
+    return (y.n * z.x)
 end
 
 function Base.:*(y::MReal, z::Real)::Real
-    return (y.n * z)
+    return (y.x * z)
 end
 
 function Base.:*(y::Real, z::MReal)::Real
-    return (y * z.n)
+    return (y * z.x)
 end
 
-function Base.:*(y::Real, z::MVector)::MVector
+function Base.:*(y::Real, z::MVector)::Vector{<:Real}
     len = z.len
     vec = Vector{Float64}(undef, len)
     for i in 1:len
         vec[i] = y * z[i]
     end
-    return MVector(vec)
+    return vec
 end
 
-function Base.:*(y::MNumber, z::MVector)::MVector
+function Base.:*(y::MInteger, z::MVector)::Vector{<:Real}
     len = z.len
     vec = Vector{Float64}(undef, len)
     for i in 1:len
         vec[i] = y.n * z[i]
     end
-    return MVector(vec)
+    return vec
 end
-function Base.:*(y::MNumber, z::Vector{<:Real})::Vector{<:Real}
+
+function Base.:*(y::MReal, z::Vector{<:Real})::Vector{<:Real}
     len = length(z)
     vec = Vector{Float64}(undef, len)
     for i in 1:len
-        vec[i] = y.n * z[i]
+        vec[i] = y.x * z[i]
     end
     return vec
 end
@@ -2147,7 +2174,7 @@ function Base.:*(y::Vector{<:Real}, z::MVector)::Real
     return dotProduct
 end
 
-function Base.:*(y::Real, z::MMatrix)::MMatrix
+function Base.:*(y::Real, z::MMatrix)::Matrix{<:Real}
     rows = z.rows
     cols = z.cols
     mtx  = Matrix{Float64}(undef, rows, cols)
@@ -2156,10 +2183,10 @@ function Base.:*(y::Real, z::MMatrix)::MMatrix
             mtx[i,j] = y * z[i,j]
         end
     end
-    return MMatrix(mtx)
+    return mtx
 end
 
-function Base.:*(y::MNumber, z::MMatrix)::MMatrix
+function Base.:*(y::MInteger, z::MMatrix)::Matrix{<:Real}
     rows = z.rows
     cols = z.cols
     mtx  = Matrix{Float64}(undef, rows, cols)
@@ -2168,21 +2195,21 @@ function Base.:*(y::MNumber, z::MMatrix)::MMatrix
             mtx[i,j] = y.n * z[i,j]
         end
     end
-    return MMatrix(mtx)
+    return mtx
 end
 
-function Base.:*(y::MNumber, z::Matrix{<:Real})::MMatrix
+function Base.:*(y::MReal, z::Matrix{<:Real})::Matrix{<:Real}
     (rows, cols) = size(z)
-    mtx  = Matrix{Float64}(undef, rows, cols)
+    mtx = Matrix{Float64}(undef, rows, cols)
     for i in 1:rows
         for j in 1:cols
-            mtx[i,j] = y.n * z[i,j]
+            mtx[i,j] = y.x * z[i,j]
         end
     end
-    return MMatrix(mtx)
+    return mtx
 end
 
-function Base.:*(y::MMatrix, z::MVector)::MVector
+function Base.:*(y::MMatrix, z::MVector)::Vector{<:Real}
     if y.cols ≠ z.len
         msg = "Dimensions are not applicable for matrix multiplication."
         throw(DimensionMismatch(msg))
@@ -2196,10 +2223,10 @@ function Base.:*(y::MMatrix, z::MVector)::MVector
         end
         vec[i] = sum
     end
-    return MVector(vec)
+    return vec
 end
 
-function Base.:*(y::MMatrix, z::Vector{<:Real})::MVector
+function Base.:*(y::MMatrix, z::Vector{<:Real})::Vector{<:Real}
     if y.cols ≠ length(z)
         msg = "Dimensions are not applicable for matrix multiplication."
         throw(DimensionMismatch(msg))
@@ -2213,10 +2240,10 @@ function Base.:*(y::MMatrix, z::Vector{<:Real})::MVector
         end
         vec[i] = sum
     end
-    return MVector(vec)
+    return vec
 end
 
-function Base.:*(y::Matrix{<:Real}, z::MVector)::MVector
+function Base.:*(y::Matrix{<:Real}, z::MVector)::Vector{<:Real}
     (rows, cols) = size(y)
     if cols ≠ z.len
         msg = "Dimensions are not applicable for matrix multiplication."
@@ -2231,10 +2258,10 @@ function Base.:*(y::Matrix{<:Real}, z::MVector)::MVector
         end
         vec[i] = sum
     end
-    return MVector(vec)
+    return vec
 end
 
-function Base.:*(y::MMatrix, z::MMatrix)::MMatrix
+function Base.:*(y::MMatrix, z::MMatrix)::Matrix{<:Real}
     if y.cols ≠ z.rows
         msg = "Dimensions are not applicable for matrix multiplication."
         throw(DimensionMismatch(msg))
@@ -2251,10 +2278,10 @@ function Base.:*(y::MMatrix, z::MMatrix)::MMatrix
             mtx[i,j] = sum
         end
     end
-    return MMatrix(mtx)
+    return mtx
 end
 
-function Base.:*(y::Matrix{<:Real}, z::MMatrix)::MMatrix
+function Base.:*(y::Matrix{<:Real}, z::MMatrix)::Matrix{<:Real}
     (y_rows, y_cols) = size(y)
     if y_cols ≠ z.rows
         msg = "Dimensions are not applicable for matrix multiplication."
@@ -2272,10 +2299,10 @@ function Base.:*(y::Matrix{<:Real}, z::MMatrix)::MMatrix
             mtx[i,j] = sum
         end
     end
-    return MMatrix(mtx)
+    return mtx
 end
 
-function Base.:*(y::MMatrix, z::Matrix{<:Real})::MMatrix
+function Base.:*(y::MMatrix, z::Matrix{<:Real})::Matrix{<:Real}
     (z_rows, z_cols) = size(z)
     if y.cols ≠ z_rows
         msg = "Dimensions are not applicable for matrix multiplication."
@@ -2293,7 +2320,7 @@ function Base.:*(y::MMatrix, z::Matrix{<:Real})::MMatrix
             mtx[i,j] = sum
         end
     end
-    return MMatrix(mtx)
+    return mtx
 end
 
 # Operators ÷, %, /, ^, \
@@ -2341,53 +2368,53 @@ function Base.:/(y::Integer, z::MInteger)::Real
 end
 
 function Base.:/(y::MReal, z::MReal)::Real
-    return (y.n / z.n)
+    return (y.x / z.x)
 end
 
 function Base.:/(y::MReal, z::MInteger)::Real
-    return (y.n / z.n)
+    return (y.x / z.n)
 end
 
 function Base.:/(y::MInteger, z::MReal)::Real
-    return (y.n / z.n)
+    return (y.n / z.x)
 end
 
 function Base.:/(y::MReal, z::Real)::Real
-    return (y.n / z)
+    return (y.x / z)
 end
 
 function Base.:/(y::Real, z::MReal)::Real
-    return (y / z.n)
+    return (y / z.x)
 end
 
-function Base.:/(y::MVector, z::Real)::MVector
+function Base.:/(y::MVector, z::Real)::Vector{<:Real}
     len = y.len
     vec = Vector{Float64}(undef, len)
     for i in 1:len
         vec[i] = y[i] / z
     end
-    return MVector(len, vec)
+    return vec
 end
 
-function Base.:/(y::MVector, z::MNumber)::MVector
+function Base.:/(y::MVector, z::MInteger)::Vector{<:Real}
     len = y.len
     vec = Vector{Float64}(undef, len)
     for i in 1:len
         vec[i] = y[i] / z.n
     end
-    return MVector(vec)
+    return vec
 end
 
-function Base.:/(y::Vector{<:Real}, z::MNumber)::MVector
+function Base.:/(y::Vector{<:Real}, z::MReal)::Vector{<:Real}
     len = length(y)
     vec = Vector{Float64}(undef, len)
     for i in 1:len
-        vec[i] = y[i] / z.n
+        vec[i] = y[i] / z.x
     end
-    return MVector(vec)
+    return vec
 end
 
-function Base.:/(y::MMatrix, z::Real)::MMatrix
+function Base.:/(y::MMatrix, z::Real)::Matrix{<:Real}
     rows = y.rows
     cols = y.cols
     mtx  = Matrix{Float64}(undef, rows, cols)
@@ -2396,10 +2423,10 @@ function Base.:/(y::MMatrix, z::Real)::MMatrix
             mtx[i,j] = y[i,j] / z
         end
     end
-    return MMatrix(mtx)
+    return mtx
 end
 
-function Base.:/(y::MMatrix, z::MNumber)::MMatrix
+function Base.:/(y::MMatrix, z::MInteger)::Matrix{<:Real}
     rows = y.rows
     cols = y.cols
     mtx  = Matrix{Float64}(undef, rows, cols)
@@ -2408,18 +2435,18 @@ function Base.:/(y::MMatrix, z::MNumber)::MMatrix
             mtx[i,j] = y[i,j] / z.n
         end
     end
-    return MMatrix(mtx)
+    return mtx
 end
 
-function Base.:/(y::Matrix{<:Real}, z::MNumber)::MMatrix
+function Base.:/(y::Matrix{<:Real}, z::MReal)::Matrix{<:Real}
     (rows, cols) = size(y)
     mtx  = Matrix{Float64}(undef, rows, cols)
     for i in 1:rows
         for j in 1:cols
-            mtx[i,j] = y[i,j] / z.n
+            mtx[i,j] = y[i,j] / z.x
         end
     end
-    return MMatrix(mtx)
+    return mtx
 end
 
 # Operator ^
@@ -2432,33 +2459,29 @@ function Base.:^(y::MInteger, z::Integer)::Integer
     return (y.n ^ z)
 end
 
+function Base.:^(y::MInteger, z::Real)::Real
+    return (y.n ^ z)
+end
+
 function Base.:^(y::Integer, z::MInteger)::Integer
     return (y ^ z.n)
 end
 
 function Base.:^(y::MReal, z::MReal)::Real
-    return (y.n ^ z.n)
+    return (y.x ^ z.x)
 end
 
-function Base.:^(y::MReal, z::MInteger)::Real
-    return (y.n ^ z.n)
+function Base.:^(y::MReal, z::Real)::Real
+    return (y.x ^ z)
 end
 
-function Base.:^(y::MInteger, z::MReal)::Real
-    return (y.n ^ z.n)
-end
-
-function Base.:^(y::MNumber, z::Real)::Real
-    return (y.n ^ z)
-end
-
-function Base.:^(y::Real, z::MNumber)::Real
-    return (y ^ z.n)
+function Base.:^(y::Real, z::MReal)::Real
+    return (y ^ z.x)
 end
 
 # Operator \
 
-function Base.:\(A::MMatrix, b::MVector)::MVector
+function Base.:\(A::MMatrix, b::MVector)::Vector{<:Real}
     if A.rows ≠ b.len
         msg = "Solving the linear system of equations 'Ax=b' for vector 'x'\n"
         msg *= "requires the rows in matrix 'A' equals the length of vector 'b'."
@@ -2467,10 +2490,10 @@ function Base.:\(A::MMatrix, b::MVector)::MVector
     vec = Vector(b)
     mtx = Matrix(A)
     x   = mtx \ vec
-    return MVector(x)
+    return x
 end
 
-function Base.:\(A::MMatrix, b::Vector{<:Real})::MVector
+function Base.:\(A::MMatrix, b::Vector{<:Real})::Vector{<:Real}
     if A.rows ≠ length(b)
         msg = "Solving the linear system of equations 'Ax=b' for vector 'x'\n"
         msg *= "requires the rows in matrix 'A' equals the length of vector 'b'."
@@ -2479,10 +2502,10 @@ function Base.:\(A::MMatrix, b::Vector{<:Real})::MVector
     vec = copy(b)
     mtx = Matrix(A)
     x   = mtx \ vec
-    return MVector(x)
+    return x
 end
 
-function Base.:\(A::Matrix{<:Real}, b::MVector)::MVector
+function Base.:\(A::Matrix{<:Real}, b::MVector)::Vector{<:Real}
     (rows, cols) = size(A)
     if rows ≠ b.len
         msg = "Solving the linear system of equations 'Ax=b' for vector 'x'\n"
@@ -2492,131 +2515,234 @@ function Base.:\(A::Matrix{<:Real}, b::MVector)::MVector
     vec = Vector(b)
     mtx = Matrix(A)
     x   = mtx \ vec
-    return MVector(x)
+    return x
 end
 
 # Methods specific to type MReal.
 
 function Base.:(round)(y::MReal)::Integer
-    return convert(Int64, round(y.n))
+    return convert(Int64, round(y.x))
 end
 
 function Base.:(ceil)(y::MReal)::Integer
-    return convert(Int64, ceil(y.n))
+    return convert(Int64, ceil(y.x))
 end
 
 function Base.:(floor)(y::MReal)::Integer
-    return convert(Int64, floor(y.n))
+    return convert(Int64, floor(y.x))
 end
 
 # Functions for both mutable number types.
 
-function Base.:(abs)(y::MNumber)::Real
-    if y.n isa Integer
-        return convert(Int64, abs(y.n))
-    else
-        return abs(y.n)
-    end
+
+function Base.:(abs)(y::MInteger)::Integer
+    return convert(Int64, abs(y.n))
 end
 
-function Base.:(sign)(y::MNumber)::Integer
+function Base.:(abs)(y::MReal)::Real
+    return convert(Float64, abs(y.x))
+end
+
+function Base.:(sign)(y::MInteger)::Integer
     return Int(sign(y.n))
+end
+
+function Base.:(sign)(y::MReal)::Integer
+    return Int(sign(y.x))
 end
 
 # Method arctan(rise,run), a.k.a. arctan2(y,x).
 
-function Base.:(atan)(y::MNumber, x::MNumber)::Real
+function Base.:(atan)(y::MInteger, x::MInteger)::Real
     return atan(y.n, x.n)
 end
 
-function Base.:(atan)(y::MNumber, x::Real)::Real
+function Base.:(atan)(y::MInteger, x::MReal)::Real
+    return atan(y.n, x.x)
+end
+
+function Base.:(atan)(y::MReal, x::MInteger)::Real
+    return atan(y.x, x.n)
+end
+
+function Base.:(atan)(y::MReal, x::MReal)::Real
+    return atan(y.x, x.x)
+end
+
+function Base.:(atan)(y::MInteger, x::Real)::Real
     return atan(y.n, x)
 end
 
-function Base.:(atan)(y::Real, x::MNumber)::Real
+function Base.:(atan)(y::MReal, x::Real)::Real
+    return atan(y.x, x)
+end
+
+function Base.:(atan)(y::Real, x::MInteger)::Real
     return atan(y, x.n)
+end
+
+function Base.:(atan)(y::Real, x::MReal)::Real
+    return atan(y, x.x)
 end
 
 # Basic math functions for mutable number types.
 
-function Base.:(sin)(y::MNumber)::Real
+function Base.:(sin)(y::MInteger)::Real
     return sin(y.n)
 end
 
-function Base.:(cos)(y::MNumber)::Real
+function Base.:(sin)(y::MReal)::Real
+    return sin(y.x)
+end
+
+function Base.:(cos)(y::MInteger)::Real
     return cos(y.n)
 end
 
-function Base.:(tan)(y::MNumber)::Real
+function Base.:(cos)(y::MReal)::Real
+    return cos(y.x)
+end
+
+function Base.:(tan)(y::MInteger)::Real
     return tan(y.n)
 end
 
-function Base.:(sinh)(y::MNumber)::Real
+function Base.:(tan)(y::MReal)::Real
+    return tan(y.x)
+end
+
+function Base.:(sinh)(y::MInteger)::Real
     return sinh(y.n)
 end
 
-function Base.:(cosh)(y::MNumber)::Real
+function Base.:(sinh)(y::MReal)::Real
+    return sinh(y.x)
+end
+
+function Base.:(cosh)(y::MInteger)::Real
     return cosh(y.n)
 end
 
-function Base.:(tanh)(y::MNumber)::Real
+function Base.:(cosh)(y::MReal)::Real
+    return cosh(y.x)
+end
+
+function Base.:(tanh)(y::MInteger)::Real
     return tanh(y.n)
 end
 
-function Base.:(asin)(y::MNumber)::Real
+function Base.:(tanh)(y::MReal)::Real
+    return tanh(y.x)
+end
+
+function Base.:(asin)(y::MInteger)::Real
     return asin(y.n)
 end
 
-function Base.:(acos)(y::MNumber)::Real
+function Base.:(asin)(y::MReal)::Real
+    return asin(y.x)
+end
+
+function Base.:(acos)(y::MInteger)::Real
     return acos(y.n)
 end
 
-function Base.:(atan)(y::MNumber)::Real
+function Base.:(acos)(y::MReal)::Real
+    return acos(y.x)
+end
+
+function Base.:(atan)(y::MInteger)::Real
     return atan(y.n)
 end
 
-function Base.:(asinh)(y::MNumber)::Real
+function Base.:(atan)(y::MReal)::Real
+    return atan(y.x)
+end
+
+function Base.:(asinh)(y::MInteger)::Real
     return asinh(y.n)
 end
 
-function Base.:(acosh)(y::MNumber)::Real
+function Base.:(asinh)(y::MReal)::Real
+    return asinh(y.x)
+end
+
+function Base.:(acosh)(y::MInteger)::Real
     return acosh(y.n)
 end
 
-function Base.:(atanh)(y::MNumber)::Real
+function Base.:(acosh)(y::MReal)::Real
+    return acosh(y.x)
+end
+
+function Base.:(atanh)(y::MInteger)::Real
     return atanh(y.n)
 end
 
-function Base.:(log)(y::MNumber)::Real
+function Base.:(atanh)(y::MReal)::Real
+    return atanh(y.x)
+end
+
+function Base.:(log)(y::MInteger)::Real
     return log(y.n)
 end
 
-function Base.:(log2)(y::MNumber)::Real
+function Base.:(log)(y::MReal)::Real
+    return log(y.x)
+end
+
+function Base.:(log2)(y::MInteger)::Real
     return log2(y.n)
 end
 
-function Base.:(log10)(y::MNumber)::Real
+function Base.:(log2)(y::MReal)::Real
+    return log2(y.x)
+end
+
+function Base.:(log10)(y::MInteger)::Real
     return log10(y.n)
 end
 
-function Base.:(exp)(y::MNumber)::Real
+function Base.:(log10)(y::MReal)::Real
+    return log10(y.x)
+end
+
+function Base.:(exp)(y::MInteger)::Real
     return exp(y.n)
 end
 
-function Base.:(exp2)(y::MNumber)::Real
+function Base.:(exp)(y::MReal)::Real
+    return exp(y.x)
+end
+
+function Base.:(exp2)(y::MInteger)::Real
     return exp2(y.n)
 end
 
-function Base.:(exp10)(y::MNumber)::Real
+function Base.:(exp2)(y::MReal)::Real
+    return exp2(y.x)
+end
+
+function Base.:(exp10)(y::MInteger)::Real
     return exp10(y.n)
 end
 
-function Base.:(sqrt)(y::MNumber)::Real
-    if y.n == -0.0
-        return 0.0
-    else
-        return sqrt(y.n)
+function Base.:(exp10)(y::MReal)::Real
+    return exp10(y.x)
+end
+
+function Base.:(sqrt)(y::MInteger)::Real
+    if y < 0
+        error("The √y is a complex number. Complex are not handled here.")
     end
+    return real(sqrt(y.n))
+end
+
+function Base.:(sqrt)(y::MReal)::Real
+    if y < 0.0
+        error("The √y is a complex number. Complex are not handled here.")
+    end
+    return real(sqrt(y.x))
 end
 
 # Functions for vectors.
@@ -2625,51 +2751,55 @@ function norm(y::MVector, p::Real=2)::Real
     return LinearAlgebra.norm(y.vec, p)
 end
 
-function unitVector(y::MVector)::MVector
-    unitVec = y / norm(y)
-    return unitVec
-end
-
 function unitVector(y::Vector{<:Real})::Vector{<:Real}
     len = length(y)
-    if eltype(y) isa BigFloat
-        unitVec = Vector{BigFloat}(undef, len)
-    elseif eltype(y) isa Float64
+    if string(eltype(y)) == "Float64"
         unitVec = Vector{Float64}(undef, len)
-    elseif eltype(y) isa Float32
+        norm    = convert(Float64, LinearAlgebra.norm(y))
+    elseif string(eltype(y)) == "Float32"
         unitVec = Vector{Float32}(undef, len)
-    else
+        norm    = convert(Float32, LinearAlgebra.norm(y))
+    elseif string(eltype(y)) == "Float16"
         unitVec = Vector{Float16}(undef, len)
+        norm    = convert(Float16, LinearAlgebra.norm(y))
+    else
+        error("Vector y in call to unitVector is of unknown type.")
     end
-    unitVec = y / norm(y)
+    for i in 1:len
+        unitVec[i] = y[i] / norm
+    end
     return unitVec
 end
 
-function cross(y::MVector, z::MVector)::MVector
+function unitVector(y::MVector)::Vector{<:Real}
+    return unitVector(y.vec)
+end
+
+function cross(y::MVector, z::MVector)::Vector{<:Real}
     if (y.len ≠ 3) || (z.len ≠ 3)
         msg = "Vector cross product is only defined for 3 dimensional vectors."
         throw(DimensionMismatch(msg))
     end
     crossprod = LinearAlgebra.cross(y.vec, z.vec)
-    return MVector(crossprod)
+    return crossprod
 end
 
-function cross(y::Vector{<:Real}, z::MVector)::MVector
+function cross(y::Vector{<:Real}, z::MVector)::Vector{<:Real}
     if (length(y) ≠ 3) || (z.len ≠ 3)
         msg = "Vector cross product is only defined for 3 dimensional vectors."
         throw(DimensionMismatch(msg))
     end
     crossprod = LinearAlgebra.cross(y, z.vec)
-    return MVector(crossprod)
+    return crossprod
 end
 
-function cross(y::MVector, z::Vector{<:Real})::MVector
+function cross(y::MVector, z::Vector{<:Real})::Vector{<:Real}
     if (y.len ≠ 3) || (length(z) ≠ 3)
         msg = "Vector cross product is only defined for 3 dimensional vectors."
         throw(DimensionMismatch(msg))
     end
     crossprod = LinearAlgebra.cross(y.vec, z)
-    return MVector(crossprod)
+    return crossprod
 end
 
 # Functions for matrices.
@@ -2679,8 +2809,8 @@ function norm(y::MMatrix, p::Real=2)::Real
     return LinearAlgebra.norm(mtx, p)
 end
 
-function Base.:(transpose)(y::MMatrix)::MMatrix
-    ytranspose = MMatrix(y.cols, y.rows)
+function Base.:(transpose)(y::MMatrix)::Matrix{<:Real}
+    ytranspose = Matrix{Float64}(undef, y.cols, y.rows)
     for i in 1:y.rows
         for j in 1:y.cols
             ytranspose[j,i] = y[i,j]
@@ -2699,10 +2829,10 @@ function det(y::MMatrix)::Real
     return LinearAlgebra.det(mtx)
 end
 
-function Base.:(inv)(y::MMatrix)::MMatrix
+function Base.:(inv)(y::MMatrix)::Matrix{<:Real}
     mtx  = Matrix(y)
     minv = Base.inv(mtx)
-    return MMatrix(minv)
+    return minv
 end
 
 function qr(y::Matrix{<:Real})::Tuple  # (Q, R) as instances of Matrix
@@ -2727,8 +2857,7 @@ end
 
 function qr(y::MMatrix)::Tuple  # (Q, R) as instances of MMatrix
     mtx = Matrix(y)
-    (q, r) = qr(mtx)
-    return (MMatrix(q), MMatrix(r))
+    return qr(mtx)
 end
 
 function lq(y::Matrix{<:Real})::Tuple  # (L, Q) as instances of Matrix
@@ -2753,21 +2882,20 @@ end
 
 function lq(y::MMatrix)::Tuple  # (L, Q) as instances of MMatrix
     mtx = Matrix(y)
-    (l, q) = lq(mtx)
-    return (MMatrix(l), MMatrix(q))
+    return lq(mtx)
 end
 
 function matrixProduct(y::Vector{<:Real}, z::Vector{<:Real})::Matrix{<:Real}
     rows = length(y)
     cols = length(z)
-    if eltype(y) isa BigFloat || eltype(z) isa BigFloat
-        mtx = Matrix{BigFloat}(undef, rows, cols)
-    elseif eltype(y) isa Float64 || eltype(z) isa Float64
+    if string(eltype(y)) == "Float64" || string(eltype(z)) == "Float64"
         mtx = Matrix{Float64}(undef, rows, cols)
-    elseif eltype(y) isa Float32 || eltype(z) isa Float32
+    elseif string(eltype(y)) == "Float32" || string(eltype(z)) == "Float32"
         mtx = Matrix{Float32}(undef, rows, cols)
-    else
+    elseif string(eltype(y)) == "Float16" && string(eltype(z)) == "Float16"
         mtx = Matrix{Float16}(undef, rows, cols)
+    else
+        error("Vector y or z in call to matrixProduct is of unknown type.")
     end
     for i in 1:rows
         for j in 1:cols
@@ -2777,40 +2905,16 @@ function matrixProduct(y::Vector{<:Real}, z::Vector{<:Real})::Matrix{<:Real}
     return mtx
 end
 
-function matrixProduct(y::MVector, z::MVector)::MMatrix
-    rows = y.len
-    cols = z.len
-    mtx  = Matrix{Float64}(undef, rows, cols)
-    for i in 1:rows
-        for j in 1:cols
-            mtx[i,j] = y[i] * z[j]
-        end
-    end
-    return MMatrix(mtx)
+function matrixProduct(y::MVector, z::MVector)::Matrix{<:Real}
+    return matrixProduct(y.vec, z.vec)
 end
 
-function matrixProduct(y::Vector{<:Real}, z::MVector)::MMatrix
-    rows = length(y)
-    cols = z.len
-    mtx  = Matrix{Float64}(undef, rows, cols)
-    for i in 1:rows
-        for j in 1:cols
-            mtx[i,j] = y[i] * z[j]
-        end
-    end
-    return MMatrix(mtx)
+function matrixProduct(y::MVector, z::Vector{<:Real})::Matrix{<:Real}
+    return matrixProduct(y.vec, z)
 end
 
-function matrixProduct(y::MVector, z::Vector{<:Real})::MMatrix
-    rows = y.len
-    cols = length(z)
-    mtx  = Matrix{Float64}(undef, rows, cols)
-    for i in 1:rows
-        for j in 1:cols
-            mtx[i,j] = y[i] * z[j]
-        end
-    end
-    return MMatrix(mtx)
+function matrixProduct(y::Vector{<:Real}, z::MVector)::Matrix{<:Real}
+    return matrixProduct(y, z.vec)
 end
 
 # end MutableTypes

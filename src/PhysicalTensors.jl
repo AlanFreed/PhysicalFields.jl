@@ -434,7 +434,7 @@ function Base.:*(y::PhysicalScalar, z::PhysicalTensor)::PhysicalTensor
     return tensor
 end
 
-function Base.:*(y::Union{Real,MNumber}, z::PhysicalTensor)::PhysicalTensor
+function Base.:*(y::Union{Real,MNumbers}, z::PhysicalTensor)::PhysicalTensor
     tensor = PhysicalTensor(z.matrix.rows, z.matrix.cols, z.units)
     for i in 1:z.matrix.rows
         for j in 1:z.matrix.cols
@@ -477,7 +477,7 @@ function Base.:/(y::PhysicalTensor, z::PhysicalScalar)::PhysicalTensor
     return tensor
 end
 
-function Base.:/(y::PhysicalTensor, z::Union{Real,MNumber})::PhysicalTensor
+function Base.:/(y::PhysicalTensor, z::Union{Real,MNumbers})::PhysicalTensor
     tensor = PhysicalTensor(y.matrix.rows, y.matrix.cols, y.units)
     for i in 1:y.matrix.rows
         for j in 1:y.matrix.cols

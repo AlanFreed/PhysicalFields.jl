@@ -2,13 +2,13 @@
 
 # This file contains methods for writing data to a file, and then reading it
 # back in again. A JSON (Java Script Object Notation) file format is adopted,
-# supplied by the Julia package JSON3.jl. Objects that are handled include 
+# supplied by the Julia package JSON.jl. Objects that are handled include 
 # the builtin types of String, Dict, Real and Vector{<:Real}, where the 
 # primative types of abstract type Real are: Bool, Int8, Int16, Int32, Int64,
-# Int128, BigInt, UInt8, UInt16, UInt32, UInt64, UInt128, Float16, Float32,
-# Float64 and BigFloat. Information for the primative type is stored along 
-# with its value so that when read in from file the correct type for the 
-# value is restored, i.e., the 'lazy' feature of JSON3 is overcome.
+# UInt8, UInt16, UInt32, UInt64, Float16, Float32 and Float64. Information 
+# for the primative type is stored along with its value so that when read in
+# from file the correct type for the value is restored, i.e., the 'lazy'
+# feature of JSON is overcome.
 
 # Also included in this file are methods that write representations of these
 # objects to string. Values, vectors of values, and matrices of values can be
@@ -39,7 +39,8 @@ function openJSONReader(my_dir_path::String, my_file_name::String)::IOStream
     file_name = string(name, ".json")
     my_file = string(my_dir_path, file_name)
     if isfile(my_file)
-        json_stream = open(my_file; lock=true, read=true, write=false, create=false, truncate=false, append=false)
+        json_stream = open(my_file; lock=true, read=true, write=false,
+                           create=false, truncate=false, append=false)
     else
         error("The specified file does not exist in the specified directory.")
     end
@@ -62,9 +63,11 @@ function openJSONWriter(my_dir_path::String, my_file_name::String)::IOStream
     file_name = string(name, ".json")
     my_file = string(my_dir_path, file_name)
     if isfile(my_file)
-        json_stream = open(my_file; lock=true, read=false, write=true, create=false, truncate=true, append=true)
+        json_stream = open(my_file; lock=true, read=false, write=true,
+                           create=false, truncate=true, append=true)
     else
-        json_stream = open(my_file; lock=true, read=false, write=true, create=true, truncate=true, append=true)
+        json_stream = open(my_file; lock=true, read=false, write=true,
+                           create=true, truncate=true, append=true)
     end
     seekstart(json_stream)
     return json_stream
@@ -90,14 +93,7 @@ end
 -------------------------------------------------------------------------------
 =#
 
-# Serializing to a JSON file.
-
-# built-in types
-
-"""
-# toFile
-
-Calls to this method must satisfy one of the following interfaces:
+#= Serializing to a JSON file.
 ```julia
     toFile(y::String, json_stream::IOStream)
     toFile(y::Dict, json_stream::IOStream)
@@ -106,15 +102,16 @@ Calls to this method must satisfy one of the following interfaces:
 ```
 where methods `openJSONReader`, `openJSONWriter` and `closeJSONStream` can be called upon to open and close the `IOStream` that is a `json_stream`.
 
-The primative types that implement abstract type `Real` are: `Bool`, `Int8`, `Int16`, `Int32`, `Int64`, `Int128`, `BigInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `UInt128`, `Float16`, `Float32`, `Float64` and `BigFloat`.
+The primative types that implement abstract type `Real` are: `Bool`, `Int8`, `Int16`, `Int32`, `Int64`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `Float16`, `Float32` and `Float64`.
 
 All primative types of `Real` are handled by method `toFile(y::Real, json_stream::IOStream)`, e.g., `toFile(true, json_stream)` writes boolean `true` to file, while `toFile(1, json_stream)` writes integer `1` to file as an instance of type `Int`; likewise, vectors of these primative types are handled by method `toFile(y::Vector{<:Real}, json_stream::IOStream)`.
 
 Information establishing the primative type of an object being stored to file is written along with its value, so that when read back in from file the restored value will be assigned the actual type of the value that was originally saved to file. The *lazy* feature of `JSON3` is not adhered to.
-"""
+=#
+
 function toFile(y::String, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
+        JSON.json(json_stream, y)
         write(json_stream, '\n')
         flush(json_stream)
     else
@@ -125,7 +122,7 @@ end
 
 function toFile(y::Dict, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
+        JSON.json(json_stream, y)
         write(json_stream, '\n')
         flush(json_stream)
     else
@@ -138,9 +135,7 @@ end
 
 function toFile(y::Real, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, string(typeof(y)))
-        write(json_stream, '\n')
-        JSON3.write(json_stream, y)
+        JSON.json(json_stream, y)
         write(json_stream, '\n')
         flush(json_stream)
     else
@@ -153,9 +148,7 @@ end
 
 function toFile(y::Vector{<:Real}, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, string(typeof(y)))
-        write(json_stream, '\n')
-        JSON3.write(json_stream, y)
+        JSON.json(json_stream, y)
         write(json_stream, '\n')
         flush(json_stream)
     else
@@ -168,14 +161,7 @@ end
 -------------------------------------------------------------------------------
 =#
 
-# Deserializing from a JSON file.
-
-# built-in types
-
-"""
-# fromFile
-
-Calls to this method must satisfy one of the following interfaces:
+#= Deserializing from a JSON file.
 ```julia
     s = fromFile(::Type{String}, json_stream::IOStream)::String
     d = fromFile(::Type{Dict},   json_stream::IOStream)::Dict
@@ -184,11 +170,12 @@ Calls to this method must satisfy one of the following interfaces:
 ```
 where methods `openJSONReader`, `openJSONWriter` and `closeJSONStream` can be called upon to open and close the `IOStream` that is a `json_stream`.
 
-All primitive types of abstract type `Real` (viz., `Bool`, `Int8`, `Int16`, `Int32`, `Int64`, `Int128`, `BigInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `UInt128`, `Float16`, `Float32`, `Float64` and `BigFloat`) are handled. Singleton values are handled via a call to `fromFile(::Type{<:Real}, json_stream::IOStream)`, e.g., if a boolean was stored to a file, then a boolean will be read back in by either a call to `fromFile(Real, json_stream)` or a call to `fromFile(Bool, json_stream)`. Vector values are handled by a call to `fromFile(Vector, json_stream)` with the type of vector being restored coming from information stored to file.
-"""
+All primitive types of abstract type `Real` (viz., `Bool`, `Int8`, `Int16`, `Int32`, `Int64`, `Int128`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `UInt128`, `Float16`, `Float32` and `Float64`) are handled. Singleton values are handled via a call to `fromFile(::Type{<:Real}, json_stream::IOStream)`, e.g., if a boolean was stored to a file, then a boolean will be read back in by either a call to `fromFile(Real, json_stream)` or a call to `fromFile(Bool, json_stream)`. Vector values are handled by a call to `fromFile(Vector, json_stream)` with the type of vector being restored coming from information stored to file.
+=#
+
 function fromFile(::Type{String}, json_stream::IOStream)::String
     if isopen(json_stream)
-        return JSON3.read(readline(json_stream), String)
+        return JSON.parse(readline(json_stream), String)
     else
         error("The supplied JSON stream is not open.")
     end
@@ -196,358 +183,250 @@ end
 
 function fromFile(::Type{Dict}, json_stream::IOStream)::Dict
     if isopen(json_stream)
-        y = JSON3.read(readline(json_stream), Dict)
+        y = JSON.parse(readline(json_stream), Dict)
     else
         error("The supplied JSON stream is not open.")
     end
-    # y is an immutable dictionary. copy(y) returns y as a mutable dictionary.
+    # y is an immutable dictionary. 
+    # copy(y) returns y as a mutable dictionary.
     return copy(y)
 end
 
-# JSON3 adopts 'lazy' type setting. To overcome this, method convert is called.
-function fromFile(::Type{<:Real}, json_stream::IOStream)::Real
+# numbers
+
+function fromFile(::Type{Bool}, json_stream::IOStream)::Bool
     if isopen(json_stream)
-        t = JSON3.read(readline(json_stream), String)
-        if isequal(t, "Bool")
-            x = JSON3.read(readline(json_stream), Bool)
-            return convert(Bool, x)
-        elseif isequal(t, "Float16")
-            x = JSON3.read(readline(json_stream), Float16)
-            return convert(Float16, x)
-        elseif isequal(t, "Float32")
-            x = JSON3.read(readline(json_stream), Float32)
-            return convert(Float32, x)
-        elseif isequal(t, "Float64")
-            x = JSON3.read(readline(json_stream), Float64)
-            return convert(Float64, x)
-        elseif isequal(t, "BigFloat")
-            x = JSON3.read(readline(json_stream), BigFloat)
-            return convert(BigFloat, x)
-        elseif isequal(t, "Int8")
-            x = JSON3.read(readline(json_stream), Int8)
-            return convert(Int8, x)
-        elseif isequal(t, "Int16")
-            x = JSON3.read(readline(json_stream), Int16)
-            return convert(Int16, x)
-        elseif isequal(t, "Int32")
-            x = JSON3.read(readline(json_stream), Int32)
-            return convert(Int32, x)
-        elseif isequal(t, "Int64")
-            x = JSON3.read(readline(json_stream), Int64)
-            return convert(Int64, x)
-        elseif isequal(t, "Int128")
-            x = JSON3.read(readline(json_stream), Int128)
-            return convert(Int128, x)
-        elseif isequal(t, "BigInt")
-            x = JSON3.read(readline(json_stream), BigInt)
-            return convert(BigInt, x)
-        elseif isequal(t, "UInt8")
-            x = JSON3.read(readline(json_stream), UInt8)
-            return convert(UInt8, x)
-        elseif isequal(t, "UInt16")
-            x = JSON3.read(readline(json_stream), UInt16)
-            return convert(UInt16, x)
-        elseif isequal(t, "UInt32")
-            x = JSON3.read(readline(json_stream), UInt32)
-            return convert(UInt32, x)
-        elseif isequal(t, "UInt64")
-            x = JSON3.read(readline(json_stream), UInt64)
-            return convert(UInt64, x)
-        elseif isequal(t, "UInt128")
-            x = JSON3.read(readline(json_stream), UInt128)
-            return convert(UInt128, x)
-        else
-            error("Unknown concrete type of abstract type Real.")
-        end
+        return JSON.parse(readline(json_stream), Bool)
     else
         error("The supplied JSON stream is not open.")
     end
-end # fromFile
+end
 
-# vectors
-
-# These type casting functions not only ensure the correct type,
-# but also enable the elements of these vectors to be mutable,
-# as JSON3 returns vectors whose elements are immutable.
-
-function _convertBoolVec(v::Vector{<:Real})::Vector{Bool}
-    if eltype(v) == Bool
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{Bool}(undef, len)
-        for i in 1:len
-            vec[i] = convert(Bool, v[i])
-        end
-        return vec
-    end
-end # _convertBoolVec
-
-function _convertInt8Vec(v::Vector{<:Real})::Vector{Int8}
-    if eltype(v) == Int8
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{Int8}(undef, len)
-        for i in 1:len
-            vec[i] = convert(Int8, v[i])
-        end
-        return vec
-    end
-end # _convertInt8Vec
-
-function _convertInt16Vec(v::Vector{<:Real})::Vector{Int16}
-    if eltype(v) == Int16
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{Int16}(undef, len)
-        for i in 1:len
-            vec[i] = convert(Int16, v[i])
-        end
-        return vec
-    end
-end # _convertInt16Vec
-
-function _convertInt32Vec(v::Vector{<:Real})::Vector{Int32}
-    if eltype(v) == Int32
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{Int32}(undef, len)
-        for i in 1:len
-            vec[i] = convert(Int32, v[i])
-        end
-        return vec
-    end
-end # _convertInt32Vec
-
-function _convertInt64Vec(v::Vector{<:Real})::Vector{Int64}
-    if eltype(v) == Int64
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{Int64}(undef, len)
-        for i in 1:len
-            vec[i] = convert(Int64, v[i])
-        end
-        return vec
-    end
-end # _convertInt64Vec
-
-function _convertInt128Vec(v::Vector{<:Real})::Vector{Int128}
-    if eltype(v) == Int128
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{Int128}(undef, len)
-        for i in 1:len
-            vec[i] = convert(Int128, v[i])
-        end
-        return vec
-    end
-end # _convertInt128Vec
-
-function _convertBigIntVec(v::Vector{<:Real})::Vector{BigInt}
-    if eltype(v) == BigInt
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{BigInt}(undef, len)
-        for i in 1:len
-            vec[i] = convert(BigInt, v[i])
-        end
-        return vec
-    end
-end # _convertBigIntVec
-
-function _convertUInt8Vec(v::Vector{<:Real})::Vector{UInt8}
-    if eltype(v) == UInt8
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{UInt8}(undef, len)
-        for i in 1:len
-            vec[i] = convert(UInt8, v[i])
-        end
-        return vec
-    end
-end # _convertUInt8Vec
-
-function _convertUInt16Vec(v::Vector{<:Real})::Vector{UInt16}
-    if eltype(v) == UInt16
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{UInt16}(undef, len)
-        for i in 1:len
-            vec[i] = convert(UInt16, v[i])
-        end
-        return vec
-    end
-end # _convertUInt16Vec
-
-function _convertUInt32Vec(v::Vector{<:Real})::Vector{UInt32}
-    if eltype(v) == UInt32
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{UInt32}(undef, len)
-        for i in 1:len
-            vec[i] = convert(UInt32, v[i])
-        end
-        return vec
-    end
-end # _convertUInt32Vec
-
-function _convertUInt64Vec(v::Vector{<:Real})::Vector{UInt64}
-    if eltype(v) == UInt64
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{UInt64}(undef, len)
-        for i in 1:len
-            vec[i] = convert(UInt64, v[i])
-        end
-        return vec
-    end
-end # _convertUInt64Vec
-
-function _convertUInt128Vec(v::Vector{<:Real})::Vector{UInt128}
-    if eltype(v) == UInt128
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{UInt128}(undef, len)
-        for i in 1:len
-            vec[i] = convert(UInt128, v[i])
-        end
-        return vec
-    end
-end # _convertUInt128Vec
-
-function _convertFloat16Vec(v::Vector{<:Real})::Vector{Float16}
-    if eltype(v) == Float16
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{Float16}(undef, len)
-        for i in 1:len
-            vec[i] = convert(Float16, v[i])
-        end
-        return vec
-    end
-end # _convertFloat16Vec
-
-function _convertFloat32Vec(v::Vector{<:Real})::Vector{Float32}
-    if eltype(v) == Float32
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{Float32}(undef, len)
-        for i in 1:len
-            vec[i] = convert(Float32, v[i])
-        end
-        return vec
-    end
-end # _convertFloat32Vec
-
-function _convertFloat64Vec(v::Vector{<:Real})::Vector{Float64}
-    if eltype(v) == Float64
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{Float64}(undef, len)
-        for i in 1:len
-            vec[i] = convert(Float64, v[i])
-        end
-        return vec
-    end
-end # _convertFloat64Vec
-
-function _convertBigFloatVec(v::Vector{<:Real})::Vector{BigFloat}
-    if eltype(v) == BigFloat
-        return copy(v)
-    else
-        len = length(v)
-        vec = Vector{BigFloat}(undef, len)
-        for i in 1:len
-            vec[i] = convert(BigFloat, v[i])
-        end
-        return vec
-    end
-end # _convertBigFloatVec
-
-function fromFile(::Type{Vector}, json_stream::IOStream)::Vector
+function fromFile(::Type{Int8}, json_stream::IOStream)::Int8
     if isopen(json_stream)
-        t = JSON3.read(readline(json_stream), String)
-        # v is an immutable vector. _convert... makes it a mutable vector.
-        if isequal(t, "Vector{Bool}")
-            v = JSON3.read(readline(json_stream), Vector{Bool})
-            return _convertBoolVec(v)
-        elseif isequal(t, "Vector{Float16}")
-            v = JSON3.read(readline(json_stream), Vector{Float16})
-            return _convertFloat16Vec(v)
-        elseif isequal(t, "Vector{Float32}")
-            v = JSON3.read(readline(json_stream), Vector{Float32})
-            return _convertFloat32Vec(v)
-        elseif isequal(t, "Vector{Float64}")
-            v = JSON3.read(readline(json_stream), Vector{Float64})
-            return _convertFloat64Vec(v)
-        elseif isequal(t, "Vector{BigFloat}")
-            v = JSON3.read(readline(json_stream), Vector{BigFloat})
-            return _convertBigFloatVec(v)
-        elseif isequal(t, "Vector{Int8}")
-            v = JSON3.read(readline(json_stream), Vector{Int8})
-            return _convertInt8Vec(v)
-        elseif isequal(t, "Vector{Int16}")
-            v = JSON3.read(readline(json_stream), Vector{Int16})
-            return _convertInt16Vec(v)
-        elseif isequal(t, "Vector{Int32}")
-            v = JSON3.read(readline(json_stream), Vector{Int32})
-            return _convertInt32Vec(v)
-        elseif isequal(t, "Vector{Int64}")
-            v = JSON3.read(readline(json_stream), Vector{Int64})
-            return _convertInt64Vec(v)
-        elseif isequal(t, "Vector{Int128}")
-            v = JSON3.read(readline(json_stream), Vector{Int128})
-            return _convertInt128Vec(v)
-        elseif isequal(t, "Vector{BigInt}")
-            v = JSON3.read(readline(json_stream), Vector{BigInt})
-            return _convertBigIntVec(v)
-        elseif isequal(t, "Vector{UInt8}")
-            v = JSON3.read(readline(json_stream), Vector{UInt8})
-            return _convertUInt8Vec(v)
-        elseif isequal(t, "Vector{UInt16}")
-            v = JSON3.read(readline(json_stream), Vector{UInt16})
-            return _convertUInt16Vec(v)
-        elseif isequal(t, "Vector{UInt32}")
-            v = JSON3.read(readline(json_stream), Vector{UInt32})
-            return _convertUInt32Vec(v)
-        elseif isequal(t, "Vector{UInt64}")
-            v = JSON3.read(readline(json_stream), Vector{UInt64})
-            return _convertUInt64Vec(v)
-        elseif isequal(t, "Vector{UInt128}")
-            v = JSON3.read(readline(json_stream), Vector{UInt128})
-            return _convertUInt128Vec(v)
-        else
-            error("Unknown concrete type of Vector{<:Real}.")
-        end
+        return JSON.parse(readline(json_stream), Int8)
     else
         error("The supplied JSON stream is not open.")
     end
-end # fromFile
+end
+
+function fromFile(::Type{Int16}, json_stream::IOStream)::Int16
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Int16)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Int32}, json_stream::IOStream)::Int32
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Int32)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Int64}, json_stream::IOStream)::Int64
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Int64)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Int128}, json_stream::IOStream)::Int128
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Int128)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{UInt8}, json_stream::IOStream)::UInt8
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), UInt8)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{UInt16}, json_stream::IOStream)::UInt16
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), UInt16)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{UInt32}, json_stream::IOStream)::UInt32
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), UInt32)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{UInt64}, json_stream::IOStream)::UInt64
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), UInt64)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{UInt128}, json_stream::IOStream)::UInt128
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), UInt128)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Float16}, json_stream::IOStream)::Float16
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Float16)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Float32}, json_stream::IOStream)::Float32
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Float32)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Float64}, json_stream::IOStream)::Float64
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Float64)
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+# vectors 
+
+function fromFile(::Type{Vector{Bool}}, json_stream::IOStream)::Vector{Bool}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{Bool})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{Int8}}, json_stream::IOStream)::Vector{Int8}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{Int8})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{Int16}}, json_stream::IOStream)::Vector{Int16}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{Int16})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{Int32}}, json_stream::IOStream)::Vector{Int32}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{Int32})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{Int64}}, json_stream::IOStream)::Vector{Int64}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{Int64})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{Int128}}, json_stream::IOStream)::Vector{Int128}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{Int128})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{UInt8}}, json_stream::IOStream)::Vector{UInt8}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{UInt8})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{UInt16}}, json_stream::IOStream)::Vector{UInt16}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{UInt16})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{UInt32}}, json_stream::IOStream)::Vector{UInt32}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{UInt32})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{UInt64}}, json_stream::IOStream)::Vector{UInt64}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{UInt64})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{UInt128}}, json_stream::IOStream)::Vector{UInt128}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{UInt128})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{Float16}}, json_stream::IOStream)::Vector{Float16}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{Float16})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{Float32}}, json_stream::IOStream)::Vector{Float32}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{Float32})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
+
+function fromFile(::Type{Vector{Float64}}, json_stream::IOStream)::Vector{Float64}
+    if isopen(json_stream)
+        return JSON.parse(readline(json_stream), Vector{Float64})
+    else
+        error("The supplied JSON stream is not open.")
+    end
+end
 
 #=
 -------------------------------------------------------------------------------
 =#
 
-# Method toString for built-in boolean types.
+#= toString
 
-"""
-# toString
-
-Provides a string representation for builtin types that are subtypes to types `Real`, `Vector{<:Real}` and `Matrix{<:Real}`. These need not be exact representations, because their intention is for displaying results in the REPL, etc., as a means of informing the user during a runtime. Ellipses may appear in vector and matrix representations if their size is otherwise too large to fit onto a line or a printed page, respectively.
+Provides a string representation for built-in types that are subtypes to abstract types `Real`, `Vector{<:Real}` and `Matrix{<:Real}`. These need not be exact representations, because their intention is for displaying results in the REPL, etc., as a means of informing the user during a runtime. Ellipses may appear in vector and matrix representations if their size is otherwise too large to fit onto a line or a printed page, respectively.
 
 A call to this method must satisfy one of the following interfaces or, via multiple dispatch, any other implementation of this method.
 
@@ -569,9 +448,8 @@ and for matrices of values:
     s = toString(m::Matrix{<:Integer})::String
     s = toString(m::Matrix{<:AbstractFloat})::String
 ```
+=#
 
-This method is intended to provide a visual inspection of a field, e.g., for use in the REPL. It is not intended to be an accurate representation; consequently, there is no corresponding `fromString` method.
-"""
 function toString(y::Bool; aligned::Bool=false)::String
     if y == true
         if aligned
@@ -926,13 +804,6 @@ function toString(y::AbstractFloat; aligned::Bool=false, digits::Int=0)::String
         else
             format = 'E'
         end
-    elseif y isa BigFloat
-        precision = 8
-        if y > -10.0 && y ≤ -0.0000001 || y ≥ 0.0000001 && y < 10.0
-            format = 'F'
-        else
-            format = 'E'
-        end
     else
         error("Argument y in method toString is of unknown type.")
     end
@@ -1133,4 +1004,3 @@ function toString(m::Matrix{<:AbstractFloat})::String
 end
 
 # Method toString does not exist for arrays in three dimensions or higher.
-

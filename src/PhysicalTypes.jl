@@ -526,175 +526,245 @@ end
 =#
 
 # Reading from and writing to a JSON file.
-StructTypes.StructType(::Type{PhysicalScalar}) = StructTypes.Struct()
-StructTypes.StructType(::Type{PhysicalVector}) = StructTypes.Struct()
-StructTypes.StructType(::Type{PhysicalTensor}) = StructTypes.Struct()
-
-StructTypes.StructType(::Type{ArrayOfPhysicalScalars}) = StructTypes.Struct()
-StructTypes.StructType(::Type{ArrayOfPhysicalVectors}) = StructTypes.Struct()
-StructTypes.StructType(::Type{ArrayOfPhysicalTensors}) = StructTypes.Struct()
-
-StructTypes.StructType(::Type{VectorOfPhysicalScalars}) = StructTypes.Struct()
-StructTypes.StructType(::Type{MatrixOfPhysicalScalars}) = StructTypes.Struct()
 
 function toFile(y::PhysicalScalar, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.value, json_stream)
+        toFile(y.units, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
 function toFile(y::PhysicalVector, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.vector, json_stream)
+        toFile(y.units, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
 function toFile(y::PhysicalTensor, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.matrix, json_stream)
+        toFile(y.units, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
 function toFile(y::ArrayOfPhysicalScalars, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.array, json_stream)
+        toFile(y.units, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
 function toFile(y::ArrayOfPhysicalVectors, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.array, json_stream)
+        toFile(y.units, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
 function toFile(y::ArrayOfPhysicalTensors, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.array, json_stream)
+        toFile(y.units, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
 function toFile(y::VectorOfPhysicalScalars, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.values, json_stream)
+        toFile(y.units, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
 function toFile(y::MatrixOfPhysicalScalars, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.values, json_stream)
+        toFile(y.units, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
 function fromFile(::Type{PhysicalScalar}, json_stream::IOStream)::PhysicalScalar
     if isopen(json_stream)
-        ps = JSON3.read(readline(json_stream), PhysicalScalar)
+        type  = fromFile(String, json_stream)
+        if !isequal(type, "PhysicalScalar")
+            error("Expected to read in a PhysicalScalar from file.")
+        end
+        value = fromFile(MReal, json_stream)
+        units = fromFile(PhysicalUnits, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    return ps
+    return PhysicalScalar(value, units)
 end
 
 function fromFile(::Type{PhysicalVector}, json_stream::IOStream)::PhysicalVector
     if isopen(json_stream)
-        pv = JSON3.read(readline(json_stream), PhysicalVector)
+        type  = fromFile(String, json_stream)
+        if !isequal(type, "PhysicalVector")
+            error("Expected to read in a PhysicalVector from file.")
+        end
+        vector = fromFile(MVector, json_stream)
+        units  = fromFile(PhysicalUnits, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    return pv
+    return PhysicalVector(vector, units)
 end
 
 function fromFile(::Type{PhysicalTensor}, json_stream::IOStream)::PhysicalTensor
     if isopen(json_stream)
-        pt = JSON3.read(readline(json_stream), PhysicalTensor)
+        type  = fromFile(String, json_stream)
+        if !isequal(type, "PhysicalTensor")
+            error("Expected to read in a PhysicalTensor from file.")
+        end
+        matrix = fromFile(MMatrix, json_stream)
+        units  = fromFile(PhysicalUnits, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    return pt
+    return PhysicalTensor(matrix, units)
 end
 
 function fromFile(::Type{ArrayOfPhysicalScalars}, json_stream::IOStream)::ArrayOfPhysicalScalars
     if isopen(json_stream)
-        aps = JSON3.read(readline(json_stream), ArrayOfPhysicalScalars)
+        type  = fromFile(String, json_stream)
+        if !isequal(type, "ArrayOfPhysicalScalars")
+            error("Expected to read in a ArrayOfPhysicalScalars from file.")
+        end
+        array = fromFile(MVector, json_stream)
+        units = fromFile(PhysicalUnits, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    return aps
+    return ArrayOfPhysicalScalars(array, units)
 end
 
 function fromFile(::Type{ArrayOfPhysicalVectors}, json_stream::IOStream)::ArrayOfPhysicalVectors
     if isopen(json_stream)
-        apv = JSON3.read(readline(json_stream), ArrayOfPhysicalVectors)
+        type  = fromFile(String, json_stream)
+        if !isequal(type, "ArrayOfPhysicalVectors")
+            error("Expected to read in a ArrayOfPhysicalVectors from file.")
+        end
+        array = fromFile(MMatrix, json_stream)
+        units = fromFile(PhysicalUnits, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    return apv
+    return ArrayOfPhysicalVectors(array, units)
 end
 
 function fromFile(::Type{ArrayOfPhysicalTensors}, json_stream::IOStream)::ArrayOfPhysicalTensors
     if isopen(json_stream)
-        apt = JSON3.read(readline(json_stream), ArrayOfPhysicalTensors)
+        type  = fromFile(String, json_stream)
+        if !isequal(type, "ArrayOfPhysicalTensors")
+            error("Expected to read in a ArrayOfPhysicalTensors from file.")
+        end
+        array = fromFile(MArray, json_stream)
+        units = fromFile(PhysicalUnits, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    return apt
+    return ArrayOfPhysicalTensors(array, units)
 end
-
+    
 function fromFile(::Type{VectorOfPhysicalScalars}, json_stream::IOStream)::VectorOfPhysicalScalars
     if isopen(json_stream)
-        vps = JSON3.read(readline(json_stream), VectorOfPhysicalScalars)
+        type  = fromFile(String, json_stream)
+        if !isequal(type, "VectorOfPhysicalScalars")
+            error("Expected to read in a VectorOfPhysicalScalars from file.")
+        end
+        values = fromFile(MVector, json_stream)
+        units  = fromFile(VectorOfPhysicalUnits, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    return vps
+    return VectorOfPhysicalScalars(values, units)
 end
 
 function fromFile(::Type{MatrixOfPhysicalScalars}, json_stream::IOStream)::MatrixOfPhysicalScalars
     if isopen(json_stream)
-        mps = JSON3.read(readline(json_stream), MatrixOfPhysicalScalars)
+        type  = fromFile(String, json_stream)
+        if !isequal(type, "MatrixOfPhysicalScalars")
+            error("Expected to read in a MatrixOfPhysicalScalars from file.")
+        end
+        values = fromFile(MMatrix, json_stream)
+        units  = fromFile(MatrixOfPhysicalUnits, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    return mps
+    return MatrixOfPhysicalScalars(values, units)
 end
 
 #=
@@ -702,6 +772,30 @@ end
 =#
 
 # Overloaded operators: ==, ≈, ≠
+
+function Base.:(==)(y::ArrayOfPhysicalScalars, z::ArrayOfPhysicalScalars)::Bool
+    if y.array == z.array && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:(==)(y::ArrayOfPhysicalVectors, z::ArrayOfPhysicalVectors)::Bool
+    if y.array == z.array && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:(==)(y::ArrayOfPhysicalTensors, z::ArrayOfPhysicalTensors)::Bool
+    if y.array == z.array && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
 
 function Base.:(==)(y::VectorOfPhysicalScalars, z::VectorOfPhysicalScalars)::Bool
     if y.values == z.values && y.units == z.units
@@ -719,6 +813,30 @@ function Base.:(==)(y::MatrixOfPhysicalScalars, z::MatrixOfPhysicalScalars)::Boo
     end
 end
 
+function Base.:≈(y::ArrayOfPhysicalScalars, z::ArrayOfPhysicalScalars)::Bool
+    if y.array ≈ z.array && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:≈(y::ArrayOfPhysicalVectors, z::ArrayOfPhysicalVectors)::Bool
+    if y.array ≈ z.array && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:≈(y::ArrayOfPhysicalTensors, z::ArrayOfPhysicalTensors)::Bool
+    if y.array ≈ z.array && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
+
 function Base.:≈(y::VectorOfPhysicalScalars, z::VectorOfPhysicalScalars)::Bool
     if y.values ≈ z.values && y.units == z.units
         return true
@@ -729,6 +847,30 @@ end
 
 function Base.:≈(MatrixOfPhysicalScalars, z::MatrixOfPhysicalScalars)::Bool
     if y.values ≈ z.values && y.units == z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:≠(y::ArrayOfPhysicalScalars, z::ArrayOfPhysicalScalars)::Bool
+    if y.array ≠ z.array || y.units ≠ z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:≠(y::ArrayOfPhysicalVectors, z::ArrayOfPhysicalVectors)::Bool
+    if y.array ≠ z.array || y.units ≠ z.units
+        return true
+    else
+        return false
+    end
+end
+
+function Base.:≠(y::ArrayOfPhysicalTensors, z::ArrayOfPhysicalTensors)::Bool
+    if y.array ≠ z.array || y.units ≠ z.units
         return true
     else
         return false

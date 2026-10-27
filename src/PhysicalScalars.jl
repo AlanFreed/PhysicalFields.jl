@@ -104,6 +104,18 @@ function Base.:(copy)(as::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
     return ArrayOfPhysicalScalars(array, units)
 end
 
+function Base.:(copy)(vec::VectorOfPhysicalScalars)::VectorOfPhysicalScalars
+    values = copy(vec.values)
+    units  = copy(vec.units)
+    return VectorOfPhysicalScalars(values, units)
+end
+
+function Base.:(copy)(mtx::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
+    values = copy(mtx.values)
+    units  = copy(mtx.units)
+    return MatrixOfPhysicalScalars(values, units)
+end
+
 #=
 --------------------------------------------------------------------------------
 =#
@@ -143,7 +155,7 @@ function Base.:(==)(y::PhysicalScalar, z::PhysicalScalar)::Bool
     end
 end
 
-function Base.:(==)(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
+function Base.:(==)(y::Union{Real, MNumbers}, z::PhysicalScalar)::Bool
     if isDimensionless(z)
         if y == z.value
             return true
@@ -155,7 +167,7 @@ function Base.:(==)(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
     end
 end
 
-function Base.:(==)(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
+function Base.:(==)(y::PhysicalScalar, z::Union{Real, MNumbers})::Bool
     if isDimensionless(y)
         if y.value == z
             return true
@@ -198,7 +210,7 @@ function Base.:≈(y::PhysicalScalar, z::PhysicalScalar)::Bool
     end
 end
 
-function Base.:≈(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
+function Base.:≈(y::Union{Real, MNumbers}, z::PhysicalScalar)::Bool
     if isDimensionless(z)
         if y ≈ z.value
             return true
@@ -210,7 +222,7 @@ function Base.:≈(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
     end
 end
 
-function Base.:≈(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
+function Base.:≈(y::PhysicalScalar, z::Union{Real, MNumbers})::Bool
     if isDimensionless(y)
         if y.value ≈ z
             return true
@@ -227,12 +239,12 @@ function Base.:≠(y::PhysicalScalar, z::PhysicalScalar)::Bool
     return !equals
 end
 
-function Base.:≠(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
+function Base.:≠(y::Union{Real, MNumbers}, z::PhysicalScalar)::Bool
     equals = (y == z)
     return !equals
 end
 
-function Base.:≠(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
+function Base.:≠(y::PhysicalScalar, z::Union{Real, MNumbers})::Bool
     equals = (y == z)
     return !equals
 end
@@ -268,7 +280,7 @@ function Base.:<(y::PhysicalScalar, z::PhysicalScalar)::Bool
     end
 end
 
-function Base.:<(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
+function Base.:<(y::Union{Real, MNumbers}, z::PhysicalScalar)::Bool
     if isDimensionless(z)
         if y < z.value
             return true
@@ -280,7 +292,7 @@ function Base.:<(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
     end
 end
 
-function Base.:<(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
+function Base.:<(y::PhysicalScalar, z::Union{Real, MNumbers})::Bool
     if isDimensionless(y)
         if y.value < z
             return true
@@ -297,12 +309,12 @@ function Base.:≥(y::PhysicalScalar, z::PhysicalScalar)::Bool
     return !lessThan
 end
 
-function Base.:≥(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
+function Base.:≥(y::Union{Real, MNumbers}, z::PhysicalScalar)::Bool
     lessThan = (y < z)
     return !lessThan
 end
 
-function Base.:≥(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
+function Base.:≥(y::PhysicalScalar, z::Union{Real, MNumbers})::Bool
     lessThan = (y < z)
     return !lessThan
 end
@@ -338,7 +350,7 @@ function Base.:>(y::PhysicalScalar, z::PhysicalScalar)::Bool
     end
 end
 
-function Base.:>(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
+function Base.:>(y::Union{Real, MNumbers}, z::PhysicalScalar)::Bool
     if isDimensionless(z)
         if y > z.value
             return true
@@ -350,7 +362,7 @@ function Base.:>(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
     end
 end
 
-function Base.:>(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
+function Base.:>(y::PhysicalScalar, z::Union{Real, MNumbers})::Bool
     if isDimensionless(y)
         if y.value > z
             return true
@@ -367,12 +379,12 @@ function Base.:≤(y::PhysicalScalar, z::PhysicalScalar)::Bool
     return !greaterThan
 end
 
-function Base.:≤(y::Union{Real, MNumber}, z::PhysicalScalar)::Bool
+function Base.:≤(y::Union{Real, MNumbers}, z::PhysicalScalar)::Bool
     greaterThan = (y > z)
     return !greaterThan
 end
 
-function Base.:≤(y::PhysicalScalar, z::Union{Real, MNumber})::Bool
+function Base.:≤(y::PhysicalScalar, z::Union{Real, MNumbers})::Bool
     greaterThan = (y > z)
     return !greaterThan
 end
@@ -410,7 +422,7 @@ function Base.:+(y::PhysicalScalar, z::PhysicalScalar)::PhysicalScalar
     return PhysicalScalar(value, units)
 end
 
-function Base.:+(y::Union{Real, MNumber}, z::PhysicalScalar)::PhysicalScalar
+function Base.:+(y::Union{Real, MNumbers}, z::PhysicalScalar)::PhysicalScalar
     if isDimensionless(z)
         units = z.units
         value = y + z.value
@@ -420,7 +432,7 @@ function Base.:+(y::Union{Real, MNumber}, z::PhysicalScalar)::PhysicalScalar
     return PhysicalScalar(value, units)
 end
 
-function Base.:+(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
+function Base.:+(y::PhysicalScalar, z::Union{Real, MNumbers})::PhysicalScalar
     if isDimensionless(y)
         units = y.units
         value = y.value + z
@@ -453,7 +465,7 @@ function Base.:-(y::PhysicalScalar, z::PhysicalScalar)::PhysicalScalar
     return PhysicalScalar(value, units)
 end
 
-function Base.:-(y::Union{Real, MNumber}, z::PhysicalScalar)::PhysicalScalar
+function Base.:-(y::Union{Real, MNumbers}, z::PhysicalScalar)::PhysicalScalar
     if isDimensionless(z)
         units = z.units
         value = y - z.value
@@ -463,7 +475,7 @@ function Base.:-(y::Union{Real, MNumber}, z::PhysicalScalar)::PhysicalScalar
     return PhysicalScalar(value, units)
 end
 
-function Base.:-(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
+function Base.:-(y::PhysicalScalar, z::Union{Real, MNumbers})::PhysicalScalar
     if isDimensionless(y)
         units = y.units
         value = y.value - z
@@ -492,13 +504,13 @@ function Base.:*(y::PhysicalScalar, z::PhysicalScalar)::PhysicalScalar
     return PhysicalScalar(value, units)
 end
 
-function Base.:*(y::Union{Real, MNumber}, z::PhysicalScalar)::PhysicalScalar
+function Base.:*(y::Union{Real, MNumbers}, z::PhysicalScalar)::PhysicalScalar
     value = y * z.value
     units = z.units
     return PhysicalScalar(value, units)
 end
 
-function Base.:*(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
+function Base.:*(y::PhysicalScalar, z::Union{Real, MNumbers})::PhysicalScalar
     value = y.value * z
     units = y.units
     return PhysicalScalar(value, units)
@@ -522,19 +534,19 @@ function Base.:/(y::PhysicalScalar, z::PhysicalScalar)::PhysicalScalar
     return PhysicalScalar(value, units)
 end
 
-function Base.:/(y::Union{Real, MNumber}, z::PhysicalScalar)::PhysicalScalar
+function Base.:/(y::Union{Real, MNumbers}, z::PhysicalScalar)::PhysicalScalar
     value = y / z.value
     units = -z.units
     return PhysicalScalar(value, units)
 end
 
-function Base.:/(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
+function Base.:/(y::PhysicalScalar, z::Union{Real, MNumbers})::PhysicalScalar
     value = y.value / z
     units = y.units
     return PhysicalScalar(value, units)
 end
 
-function Base.:^(y::PhysicalScalar, z::Union{Real, MNumber})::PhysicalScalar
+function Base.:^(y::PhysicalScalar, z::Union{Real, MNumbers})::PhysicalScalar
     if typeof(z) == Integer || typeof(z) == MInteger
         value = y.value ^ z
         if isDimensionless(y)
@@ -713,7 +725,7 @@ function Base.:(atan)(y::PhysicalScalar, x::PhysicalScalar)::Real
     return n
 end
 
-function Base.:(atan)(y::PhysicalScalar, x::Union{Real, MNumber})::Real
+function Base.:(atan)(y::PhysicalScalar, x::Union{Real, MNumbers})::Real
     if isDimensionless(y)
         n = atan(y.value, x)
     else
@@ -722,7 +734,7 @@ function Base.:(atan)(y::PhysicalScalar, x::Union{Real, MNumber})::Real
     return n
 end
 
-function Base.:(atan)(y::Union{Real, MNumber}, x::PhysicalScalar)::Real
+function Base.:(atan)(y::Union{Real, MNumbers}, x::PhysicalScalar)::Real
     if isDimensionless(x)
         n = atan(y, x.value)
     else

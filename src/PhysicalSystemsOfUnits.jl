@@ -3,20 +3,33 @@
 # Exported type
 struct PhysicalUnits
     system::String
-    length::Integer
-    mass::Integer
-    amount_of_substance::Integer
-    time::Integer
-    temperature::Integer
-    electric_current::Integer
-    light_intensity::Integer
+    length::Int8
+    mass::Int8
+    amount_of_substance::Int8
+    time::Int8
+    temperature::Int8
+    electric_current::Int8
+    light_intensity::Int8
 
     # constructor
 
-    function PhysicalUnits(system::String, length::Integer, mass::Integer, amount_of_substance::Integer, 
-               time::Integer, temperature::Integer, electric_current::Integer, light_intensity::Integer)
-        return new(system, length, mass, amount_of_substance, 
-                   time, temperature, electric_current, light_intensity)
+    function PhysicalUnits(system::String, 
+                           length::Integer, 
+                           mass::Integer, 
+                           amount_of_substance::Integer, 
+                           time::Integer,
+                           temperature::Integer, 
+                           electric_current::Integer,
+                           light_intensity::Integer)
+        
+        new(system, 
+            convert(Int8, length), 
+            convert(Int8, mass),
+            convert(Int8, amount_of_substance), 
+            convert(Int8, time), 
+            convert(Int8, temperature), 
+            convert(Int8, electric_current), 
+            convert(Int8, light_intensity))
     end
 end
 
@@ -861,26 +874,48 @@ end
 
 # Reading and writing physical units from/to a JSON file.
 
-StructTypes.StructType(::Type{PhysicalUnits}) = StructTypes.Struct()
-
 function toFile(y::PhysicalUnits, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.system, json_stream)
+        toFile(y.length, json_stream)
+        toFile(y.mass, json_stream)
+        toFile(y.amount_of_substance, json_stream)
+        toFile(y.time, json_stream)
+        toFile(y.temperature, json_stream)
+        toFile(y.electric_current, json_stream)
+        toFile(y.light_intensity, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
 function fromFile(::Type{PhysicalUnits}, json_stream::IOStream)::PhysicalUnits
     if isopen(json_stream)
-        y = JSON3.read(readline(json_stream), PhysicalUnits)
+        type = fromFile(String, json_stream)
+        if type ≠ "PhysicalUnits"
+            error("Unknown type. Cannot be parsed from file.")
+        end
+        system              = fromFile(String, json_stream)
+        length              = fromFile(Int8, json_stream)
+        mass                = fromFile(Int8, json_stream)
+        amount_of_substance = fromFile(Int8, json_stream)
+        time                = fromFile(Int8, json_stream)
+        temperature         = fromFile(Int8, json_stream)
+        electric_current    = fromFile(Int8, json_stream)
+        light_intensity     = fromFile(Int8, json_stream)
     else
         error("The supplied JSON stream is not open.")
     end
-    return y
+    units = PhysicalUnits(system, length, mass, amount_of_substance, 
+               time, temperature, electric_current, light_intensity)
+    return units
 end
 
 #=
@@ -888,19 +923,19 @@ end
 =#
 
 struct VectorOfPhysicalUnits
-    len::UInt32                   # A vector's length, which is fixed.
+    len::UInt8                    # A vector's length, which is fixed.
     vec::Vector{PhysicalUnits}    # A column vector with mutable elements.
 
-    # constructor
+    # constructors
 
     function VectorOfPhysicalUnits(length::Integer)
-        if length isa UInt32
+        if isa(length, UInt8)
             len = length
         else
-            len = convert(UInt32, length)
+            len = convert(UInt8, length)
         end
         
-        vec = Vector{PhysicalUnits}[]
+        vec = Vector{PhysicalUnits}(undef, len)
         # Initialize entries with dimensionless units.
         system              = "SI"
         length              = 0
@@ -911,13 +946,71 @@ struct VectorOfPhysicalUnits
         electric_current    = 0
         light_intensity     = 0
         for i in 1:len
-            units = PhysicalUnits(system, length, mass, amount_of_substance, 
-                       time, temperature, electric_current, light_intensity)
-            push!(vec, units)
+            units  = PhysicalUnits(system, length, mass, amount_of_substance, 
+                        time, temperature, electric_current, light_intensity)
+            vec[i] = units
         end
+        
         new(len, vec)
     end
+
+    function VectorOfPhysicalUnits(length::Integer, vector::Vector{PhysicalUnits})
+        if length ≠ Base.length(vector)
+            error("The supplied length does not equal the vector's dimension.")
+        end
+        if isa(length, UInt8)
+            len = length
+        else
+            len = convert(UInt8, length)
+        end
+        new(len, vector)
+    end
 end # VectorOfPhysicalUnits
+
+# testing units
+
+function isDimensionless(y::VectorOfPhysicalUnits)::Bool
+    for i in 1:y.len
+        if !isDimensionless(y[i])
+            return false
+        end
+    end
+    return true
+end
+
+function isSI(y::VectorOfPhysicalUnits)::Bool
+    for i in 1:y.len
+        if !isSI(y[i])
+            return false
+        end
+    end
+    return true
+end
+
+function isCGS(y::VectorOfPhysicalUnits)::Bool
+    for i in 1:y.len
+        if !isCGS(y[i])
+            return false
+        end
+    end
+    return true
+end
+
+function toSI(y::VectorOfPhysicalUnits)::VectorOfPhysicalUnits
+    ySI = VectorOfPhysicalUnits(y.len)
+    for i in 1:y.len
+        ySI[i] = toSI(y[i])
+    end
+    return ySI
+end
+
+function toCGS(y::VectorOfPhysicalUnits)::VectorOfPhysicalUnits
+    yCGS = VectorOfPhysicalUnits(y.len)
+    for i in 1:y.len
+        yCGS[i] = toCGS(y[i])
+    end
+    return yCGS
+end
 
 # Methods extending their base methods.
     
@@ -948,38 +1041,42 @@ end
 
 # Reading and writing vector of physical units from/to a JSON file.
 
-StructTypes.StructType(::Type{VectorOfPhysicalUnits}) = StructTypes.Struct()
-
 function toFile(y::VectorOfPhysicalUnits, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y.len)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.len, json_stream)
         for i in 1:y.len
-            JSON3.write(json_stream, y.vec[i])
-            write(json_stream, '\n')
-            if i % 5 == 0
-                flush(json_stream)
-            end
+            units = y.vec[i]
+            toFile(units, json_stream)
         end
     else
         error("The supplied JSON stream is not open.")
     end
-    flush(json_stream)
     return nothing
 end
 
 function fromFile(::Type{VectorOfPhysicalUnits},
                   json_stream::IOStream)::VectorOfPhysicalUnits
     if isopen(json_stream)
-        len = JSON3.read(readline(json_stream), Integer)
-        vec = VectorOfPhysicalUnits(len)
+        type = fromFile(String, json_stream)
+        if !isequal(type, "VectorOfPhysicalUnits")
+            error("The type read in from file is not VectorOfPhysicalUnits.")
+        end
+        len = fromFile(UInt8, json_stream)
+        vec = Vector{PhysicalUnits}(undef, len)
         for i in 1:len
-            vec.vec[i] = JSON3.read(readline(json_stream), PhysicalUnits)
+            units  = fromFile(PhysicalUnits, json_stream)
+            vec[i] = units
         end
     else
         error("The supplied JSON stream is not open.")
     end
-    return vec
+    return VectorOfPhysicalUnits(len, vec)
 end
 
 # Overloaded these operators: logical: ==, ≠
@@ -1005,26 +1102,45 @@ end
 =#
 
 struct MatrixOfPhysicalUnits
-    rows::UInt16                  # Rows in a matrix, which is fixed.
-    cols::UInt16                  # Columns in a matrix, which is fixed.
+    rows::UInt8                   # Rows in a matrix, which is fixed.
+    cols::UInt8                   # Columns in a matrix, which is fixed.
     vec::Vector{PhysicalUnits}    # Matrix reshaped as column vector with mutable elements.
     
     # constructors
-
-    function MatrixOfPhysicalUnits(rows::Integer, columns::Integer)
-        if rows isa UInt16
-            row = rows
-        else
-            row = convert(UInt16, rows)
+    
+    function MatrixOfPhysicalUnits(matrix::Matrix{PhysicalUnits})
+        (rows, cols) = size(matrix)
+        if !isa(rows, UInt8)
+            rows = convert(UInt8, rows)
         end
-        if columns isa UInt16
-            col = columns
-        else
-            col = convert(UInt16, columns)
+        if !isa(cols, UInt8)
+            cols = convert(UInt8, cols)
         end
         
-        len = convert(UInt32, rows*columns)
-        vec = Vector{PhysicalUnits}[]
+        len = convert(UInt16, rows*cols)
+        vec = Vector{PhysicalUnits}(undef, len)
+        for row in 1:rows
+            for col in 1:cols
+                index = row + (col - 1)*rows
+                vec[index] = matrix[row, col]
+            end
+        end
+        
+        new(rows, cols, vec)
+    end
+
+    function MatrixOfPhysicalUnits(rows::Integer, columns::Integer)
+        if !isa(rows, UInt8)
+            rows = convert(UInt8, rows)
+        end
+        if isa(columns, UInt8)
+            cols = columns
+        else
+            cols = convert(UInt8, columns)
+        end
+        
+        len = rows * cols
+        vec = Vector{PhysicalUnits}(undef, len)
         # Initialize entries with dimensionless units.
         system              = "SI"
         length              = 0
@@ -1035,16 +1151,122 @@ struct MatrixOfPhysicalUnits
         electric_current    = 0
         light_intensity     = 0
         for i in 1:len
-            units = PhysicalUnits(system, length, mass, amount_of_substance, 
-                       time, temperature, electric_current, light_intensity)
-            push!(vec, units)
+            units  = PhysicalUnits(system, length, mass, amount_of_substance, 
+                        time, temperature, electric_current, light_intensity)
+            vec[i] = units
         end
         
-        new(row, col, vec)
+        new(rows, cols, vec)
+    end
+    
+    function MatrixOfPhysicalUnits(rows::Integer, columns::Integer,
+                                   vector::Vector{PhysicalUnits})
+        if !isa(rows, UInt8)
+            rows = convert(UInt8, rows)
+        end
+        if isa(columns, UInt8)
+            cols = columns
+        else
+            cols = convert(UInt8, columns)
+        end
+        if rows*cols ≠ Base.length(vector)
+            error("The vector's length does not equate with the matrix's size.")
+        end
+        
+        len = rows * columns
+        vec = Vector{PhysicalUnits}(undef, len)
+        for i in 1:len
+            vec[i] = vector[i]
+        end
+        
+        new(rows, cols, vec)
+    end
+    
+    function MatrixOfPhysicalUnits(rows::Integer, columns::Integer,
+                                   matrix::Matrix{PhysicalUnits})
+        if !isa(rows, UInt8)
+            rows = convert(UInt8, rows)
+        end
+        if isa(columns, UInt8)
+            cols = columns
+        else
+            cols = convert(UInt8, columns)
+        end
+        if (rows, cols) ≠ size(matrix)
+            error("The matrix's size does not equate with the supplied size.")
+        end
+        
+        len = rows * columns
+        vec = Vector{PhysicalUnits}(undef, len)
+        for row in 1:rows
+            for col in 1:cols
+                index = row + (col - 1)*rows
+                vec[index] = matrix[row, col]
+            end
+        end
+        
+        new(rows, cols, vec)
     end
 end # MatrixOfPhysicalUnits
 
 # Methods extending their base methods.
+
+# testing units
+
+function isDimensionless(y::MatrixOfPhysicalUnits)::Bool
+    for i in 1:y.rows
+        for j in 1:y.cols
+            if !isDimensionless(y[i,j])
+                return false
+            end
+        end
+    end
+    return true
+end
+
+function isSI(y::MatrixOfPhysicalUnits)::Bool
+    for i in 1:y.rows
+        for j in 1:y.cols
+            if !isSI(y[i,j])
+                return false
+            end
+        end
+    end
+    return true
+end
+
+function isCGS(y::MatrixOfPhysicalUnits)::Bool
+    for i in 1:y.rows
+        for j in 1:y.cols
+            if !isCGS(y[i,j])
+                return false
+            end
+        end
+    end
+    return true
+end
+
+function toSI(y::MatrixOfPhysicalUnits)::MatrixOfPhysicalUnits
+    ySI = MatrixOfPhysicalUnits(y.rows, y.cols)
+    for i in 1:y.rows
+        for j in 1:y.cols
+            ySI[i,j] = toSI(y[i,j])
+        end
+    end
+    return ySI
+end
+
+function CGS(y::MatrixOfPhysicalUnits)::MatrixOfPhysicalUnits
+    yCGS = MatrixOfPhysicalUnits(y.rows, y.cols)
+    for i in 1:y.rows
+        for j in 1:y.cols
+            yCGS[i,j] = toCGS(y[i,j])
+        end
+    end
+    return yCGS
+end
+
+# indexing
 
 function Base.:(getindex)(y::MatrixOfPhysicalUnits, row::Integer, column::Integer)::PhysicalUnits
     if row < 1 || row > y.rows || column < 1 || column > y.cols
@@ -1076,21 +1298,20 @@ end # copy
 
 # Reading and writing matrix of physical units from/to a JSON file.
 
-StructTypes.StructType(::Type{MatrixOfPhysicalUnits}) = StructTypes.Struct()
-
 function toFile(y::MatrixOfPhysicalUnits, json_stream::IOStream)
     if isopen(json_stream)
-        JSON3.write(json_stream, y.rows)
-        write(json_stream, '\n')
-        JSON3.write(json_stream, y.cols)
-        write(json_stream, '\n')
+        (path, dotType) = splitext(string(typeof(y)))
+        type = ""
+        for i in 2:length(dotType)
+            type = string(type, dotType[i])
+        end
+        toFile(type, json_stream)
+        toFile(y.rows, json_stream)
+        toFile(y.cols, json_stream)
         len = y.rows * y.cols
         for i in 1:len
-            JSON3.write(json_stream, y.vec[i])
-            write(json_stream, '\n')
-            if i % 5 == 0
-                flush(json_stream)
-            end
+            units = y.vec[i]
+            toFile(units, json_stream)
         end
     else
         error("The supplied JSON stream is not open.")
@@ -1102,17 +1323,22 @@ end
 function fromFile(::Type{MatrixOfPhysicalUnits},
                   json_stream::IOStream)::MatrixOfPhysicalUnits
     if isopen(json_stream)
-        rows = JSON3.read(readline(json_stream), Integer)
-        cols = JSON3.read(readline(json_stream), Integer)
-        mtx  = MatrixOfPhysicalUnits(rows, cols)
+        type = fromFile(String, json_stream)
+        if !isequal(type, "MatrixOfPhysicalUnits")
+            error("The type read in from file is not MatrixOfPhysicalUnits.")
+        end
+        rows = fromFile(UInt8, json_stream)
+        cols = fromFile(UInt8, json_stream)
         len  = rows * cols
+        vec  = Vector{PhysicalUnits}(undef, len)
         for i in 1:len
-            mtx.vec[i] = JSON3.read(readline(json_stream), PhysicalUnits)
+            units  = fromFile(PhysicalUnits, json_stream)
+            vec[i] = units
         end
     else
         error("The supplied JSON stream is not open.")
     end
-    return mtx
+    return MatrixOfPhysicalUnits(rows, cols, vec)
 end
 
 # Overloaded these operators: logical: ==, ≠

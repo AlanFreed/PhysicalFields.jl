@@ -357,7 +357,7 @@ function Base.:*(y::PhysicalScalar, z::PhysicalVector)::PhysicalVector
     return scalarProduct
 end
 
-function Base.:*(y::Union{Real,MNumber}, z::PhysicalVector)::PhysicalVector
+function Base.:*(y::Union{Real,MNumbers}, z::PhysicalVector)::PhysicalVector
     scalarProduct = PhysicalVector(z.vector.len, z.units)
     for i in 1:z.vector.len
         scalarProduct[i] = y * z[i]
@@ -408,7 +408,7 @@ function Base.:/(y::PhysicalVector, z::PhysicalScalar)::PhysicalVector
     return scalarDivision
 end
 
-function Base.:/(y::PhysicalVector, z::Union{Real,MNumber})::PhysicalVector
+function Base.:/(y::PhysicalVector, z::Union{Real,MNumbers})::PhysicalVector
     scalarDivision = PhysicalVector(y.vector.len, y.units)
     for i in 1:y.vector.len
         scalarDivision[i] = y[i] / z
