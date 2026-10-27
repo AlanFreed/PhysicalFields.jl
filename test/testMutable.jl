@@ -3,9 +3,12 @@ module testMutable
 using
     ..PhysicalFields
 
-export run
+export
+    testMNumbers,
+    testMArrays,
+    testPersistence
 
-function run()
+function testMNumbers()
     println("This program tests mutable objects to ensure they are mutable.")
     println()
     println("Test MBoolean:")
@@ -130,7 +133,10 @@ function run()
     println("sqrt(z)   = ", toString(sqrt(z)))
     println("with")
     println("sqrt(z)^2 = ", toString(sqrt(z)^2))
-    println()
+    return nothing
+end # testMNumbers
+
+function testMArrays()
     println("Test MVector:")
     println()
     println("First we test its three constructors.")
@@ -260,7 +266,7 @@ function run()
     println("Given the 3×3 mutable matrix c =")
     println(toString(c))
     println("then a Gram-Schmidt factorization of c produces:")
-    (qL, r) = PhysicalFields.qr(c)
+    (qL, r) = qr(c)
     println("Qᴸ from a QR (Gram-Schmidt) factorization of matrix c is")
     println(toString(qL))
     println("R from a QR (Gram-Schmidt) factorization of matrix c is")
@@ -279,7 +285,7 @@ function run()
     println(toString(l*qE))
     println("while QᴱQᴱᵀ must return the identity matrix as a second check")
     println(toString(qE*transpose(qE)))
-    println("Note that QᴱQᴸ ≠ I; it orthogonal with components ")
+    println("Note that QᴱQᴸ ≠ I; it is orthogonal with components ")
     println(toString(qE*qL))
     Qᴸ = qL
     println()
@@ -310,7 +316,7 @@ function run()
     println(toString(l*qE))
     println("while QᴱQᴱᵀ must return the identity matrix as a second check")
     println(toString(qE*transpose(qE)))
-    println("Note that QᴱQᴸ ≠ I; it orthogonal with components ")
+    println("Note that QᴱQᴸ ≠ I; it is orthogonal with components ")
     println(toString(qE*qL))
     println()
     println("Finally, we test the matrix product.")
@@ -394,6 +400,183 @@ function run()
     println()
     println("If these answers make sense, then this test passes.")
     return nothing
-end # run
+end # testMArrays
+
+function testPersistence()
+    println("Test writing-to and reading-from file for built-in types.")
+    println()
+    my_dir_path = string(pwd(), "/test/files/")
+    if !isdir(my_dir_path)
+        mkdir(string(pwd(), "/test/files/"))
+    end
+
+    r1 = 2
+    r2 = 5
+    r3 = 8
+    a1 = [1 2 3]
+    a2 = [4 5 6]
+    a3 = [7 8 9]
+    m1 = [1 2 3; 4 5 6; 7 8 9]
+    m2 = [1 4 7; 2 5 8; 3 6 9]
+    m3 = [1 8 6; 2 5 9; 3 4 7]
+    
+    json_stream = openJSONWriter(my_dir_path, "testMutableTypes.json")
+    
+    # base types: Boolean, Integer, Real
+    wmb = MBoolean(false)
+    wmi = MInteger(33)
+    wmr = MReal(-25.0)
+    toFile(wmb, json_stream)
+    toFile(wmi, json_stream)
+    toFile(wmr, json_stream)
+    
+    # physical fields: Scalar, Vector, Tensor
+    wps = PhysicalScalar(r1, MASS)
+    wpv = PhysicalVector(3, VELOCITY)
+    for i in 1:3
+        wpv[i] = PhysicalScalar(a1[i], VELOCITY)
+    end
+    wpt = PhysicalTensor(3, 3, STRESS)
+    for i in 1:3
+        for j in 1:3
+            wpt[i,j] = PhysicalScalar(m1[i,j], STRESS)
+        end
+    end
+    toFile(wps, json_stream)
+    toFile(wpv, json_stream)
+    toFile(wpt, json_stream)
+    
+    # arrays of physical fields: Arrays of a physical field collected over time
+    s1 = PhysicalScalar(r1, ENTROPY)
+    s2 = PhysicalScalar(r2, ENTROPY)
+    s3 = PhysicalScalar(r3, ENTROPY)
+    v1 = PhysicalVector(3, DISPLACEMENT)
+    v2 = PhysicalVector(3, DISPLACEMENT)
+    v3 = PhysicalVector(3, DISPLACEMENT)
+    for i in 1:3
+        v1[i] = PhysicalScalar(a1[i], DISPLACEMENT)
+        v2[i] = PhysicalScalar(a2[i], DISPLACEMENT)
+        v3[i] = PhysicalScalar(a3[i], DISPLACEMENT)
+    end
+    t1 = PhysicalTensor(m1, MASS)
+    t2 = PhysicalTensor(m2, MASS)
+    t3 = PhysicalTensor(m3, MASS)
+    for i in 1:3
+        for j in 1:3
+            t1[i,j] = PhysicalScalar(m1[i,j], MASS)
+            t2[i,j] = PhysicalScalar(m2[i,j], MASS)
+            t3[i,j] = PhysicalScalar(m3[i,j], MASS)
+        end
+    end
+    was = ArrayOfPhysicalScalars(3, ENTROPY)
+    was[1] = s1
+    was[2] = s2
+    was[3] = s3
+    wav = ArrayOfPhysicalVectors(3, 3, DISPLACEMENT)
+    wav[1] = v1
+    wav[2] = v2
+    wav[3] = v3
+    wat = ArrayOfPhysicalTensors(3, 3, 3, MASS)
+    wat[1] = t1
+    wat[2] = t2
+    wat[3] = t3
+    toFile(was, json_stream)
+    toFile(wav, json_stream)
+    toFile(wat, json_stream)
+    
+    # arrays of scalar fields: Arrays of a collection of scalar fields
+    s4 = PhysicalScalar(r2, STRESS_RATE)
+    
+    wvs = VectorOfPhysicalScalars(2)
+    wvs[1] = s1
+    wvs[2] = s4
+    wms = MatrixOfPhysicalScalars(2, 2)
+    wms[1,1] = s1
+    wms[1,2] = s4
+    wms[2,1] = -1/s4
+    wms[2,2] = 1/s1
+    toFile(wvs, json_stream)
+    toFile(wms, json_stream)
+    
+    close(json_stream)
+    
+    json_stream = openJSONReader(my_dir_path, "testMutableTypes.json")
+    
+    rmb = fromFile(MBoolean, json_stream)
+    rmi = fromFile(MInteger, json_stream)
+    rmr = fromFile(MReal, json_stream)
+    
+    rps = fromFile(PhysicalScalar, json_stream)
+    rpv = fromFile(PhysicalVector, json_stream)
+    rpt = fromFile(PhysicalTensor, json_stream)
+    
+    ras = fromFile(ArrayOfPhysicalScalars, json_stream)
+    rav = fromFile(ArrayOfPhysicalVectors, json_stream)
+    rat = fromFile(ArrayOfPhysicalTensors, json_stream)
+    
+    rvs = fromFile(VectorOfPhysicalScalars, json_stream)
+    rms = fromFile(MatrixOfPhysicalScalars, json_stream)
+    
+    close(json_stream)
+    
+    if rmb == wmb
+        print("MBoolean passed persistence test.\n")
+    else
+        print("MBoolean failed persistence test.\n")
+    end
+    if rmi == wmi
+        print("MInteger passed persistence test.\n")
+    else
+        print("MInteger failed persistence test.\n")
+    end
+    if rmr == wmr
+        print("MReal passed persistence test.\n")
+    else
+        print("MReal failed persistence test.\n")
+    end
+    
+    if rps == wps
+        print("PhysicalScalar passed persistence test.\n")
+    else
+        print("PhysicalScalar failed persistence test.\n")
+    end
+    if rpv == wpv
+        print("PhysicalVector passed persistence test.\n")
+    else
+        print("PhysicalVector failed persistence test.\n")
+    end
+    if rpt == wpt
+        print("PhysicalTensor passed persistence test.\n")
+    else
+        print("PhysicalTensor failed persistence test.\n")
+    end
+    
+    if ras == was
+        print("ArrayOfPhysicalScalars passed persistence test.\n")
+    else
+        print("ArrayOfPhysicalScalars failed persistence test.\n")
+    end
+    if rav == wav
+        print("ArrayOfPhysicalVectors passed persistence test.\n")
+    else
+        print("ArrayOfPhysicalVectors failed persistence test.\n")
+    end
+    if rat == wat
+        print("ArrayOfPhysicalTensors passed persistence test.\n")
+    else
+        print("ArrayOfPhysicalTensors failed persistence test.\n")
+    end
+    
+    if rvs == wvs
+        print("VectorOfPhysicalScalars passed persistence test.\n")
+    else
+        print("VectorOfPhysicalScalars failed persistence test.\n")
+    end
+    if rms == wms
+        print("MatrixOfPhysicalScalars passed persistence test.\n")
+    else
+        print("MatrixOfPhysicalScalars failed persistence test.\n")
+    end
+end # testPersistence
 
 end # testMutable

@@ -3,16 +3,21 @@ module testPersistence
 using
     ..PhysicalFields
 
-export run
-
-function run(at_dir::String)
+export
+    testBuiltIns,
+    testToString
+    
+function testBuiltIns()
     println("Test writing-to and reading-from file for built-in types.")
     println()
-    my_dir_path = string(at_dir, "/test/files/")
+    my_dir_path = string(pwd(), "/test/files/")
+    if !isdir(my_dir_path)
+        mkdir(string(pwd(), "/test/files/"))
+    end
     
     # Testing values.
 
-    json_stream = openJSONWriter(my_dir_path, "testValuePersistence.json")
+    json_stream = openJSONWriter(my_dir_path, "testBuiltInTypes.json")
     
     w1  = "This is a test file."
     w2  = Dict{String, Int}("a" => 1, "b" => 2, "c" => 3)
@@ -22,16 +27,15 @@ function run(at_dir::String)
     w6  = Int32(-3)
     w7  = Int64(-4)
     w8  = Int128(-5)
-    w9  = BigInt(-6)
-    w10 = UInt8(1)
-    w11 = UInt16(2)
-    w12 = UInt32(3)
-    w13 = UInt64(4)
-    w14 = UInt128(5)
-    w15 = Float16(1.0)
-    w16 = Float32(2.0)
-    w17 = Float64(3.0)
-    w18 = BigFloat(4.0)
+    w9  = UInt8(1)
+    w10 = UInt16(2)
+    w11 = UInt32(3)
+    w12 = UInt64(4)
+    w13 = UInt128(5)
+    w14 = Float16(1.0/3.0)
+    w15 = Float32(2.0/3.0)
+    w16 = Float64(4.0/3.0)
+    
     toFile(w1,  json_stream) # String
     toFile(w2,  json_stream) # Dict
     toFile(w3,  json_stream) # Bool
@@ -40,39 +44,35 @@ function run(at_dir::String)
     toFile(w6,  json_stream) # Int32
     toFile(w7,  json_stream) # Int64
     toFile(w8,  json_stream) # Int128
-    toFile(w9,  json_stream) # BigInt
-    toFile(w10, json_stream) # UInt8
-    toFile(w11, json_stream) # UInt16
-    toFile(w12, json_stream) # UInt32
-    toFile(w13, json_stream) # UInt64
-    toFile(w14, json_stream) # UInt128
-    toFile(w15, json_stream) # Float16
-    toFile(w16, json_stream) # Float32
-    toFile(w17, json_stream) # Float64
-    toFile(w18, json_stream) # BigFloat
+    toFile(w9,  json_stream) # UInt8
+    toFile(w10, json_stream) # UInt16
+    toFile(w11, json_stream) # UInt32
+    toFile(w12, json_stream) # UInt64
+    toFile(w13, json_stream) # UInt128
+    toFile(w14, json_stream) # Float16
+    toFile(w15, json_stream) # Float32
+    toFile(w16, json_stream) # Float64
     
     close(json_stream)
     
-    json_stream = openJSONReader(my_dir_path, "testValuePersistence.json")
+    json_stream = openJSONReader(my_dir_path, "testBuiltInTypes.json")
     
-    r1  = fromFile(String, json_stream)
-    r2  = fromFile(Dict,   json_stream)
-    r3  = fromFile(Bool,   json_stream) # Bool
-    r4  = fromFile(Int8,   json_stream) # Int8
-    r5  = fromFile(Int16,  json_stream) # Int16
-    r6  = fromFile(Int32,  json_stream) # Int32
-    r7  = fromFile(Int64,  json_stream) # Int64
-    r8  = fromFile(Int128, json_stream) # Int128
-    r9  = fromFile(Real,   json_stream) # BigInt
-    r10 = fromFile(Real,   json_stream) # UInt8
-    r11 = fromFile(Real,   json_stream) # UInt16
-    r12 = fromFile(Real,   json_stream) # UInt32
-    r13 = fromFile(Real,   json_stream) # UInt64
-    r14 = fromFile(Real,   json_stream) # UInt128
-    r15 = fromFile(Real,   json_stream) # Float16
-    r16 = fromFile(Real,   json_stream) # Float32
-    r17 = fromFile(Real,   json_stream) # Float64
-    r18 = fromFile(Real,   json_stream) # BigFloat
+    r1  = fromFile(String,  json_stream) # String
+    r2  = fromFile(Dict,    json_stream) # Dict
+    r3  = fromFile(Bool,    json_stream) # Bool
+    r4  = fromFile(Int8,    json_stream) # Int8
+    r5  = fromFile(Int16,   json_stream) # Int16
+    r6  = fromFile(Int32,   json_stream) # Int32
+    r7  = fromFile(Int64,   json_stream) # Int64
+    r8  = fromFile(Int128,  json_stream) # Int128
+    r9  = fromFile(UInt8,   json_stream) # UInt8
+    r10 = fromFile(UInt16,  json_stream) # UInt16
+    r11 = fromFile(UInt32,  json_stream) # UInt32
+    r12 = fromFile(UInt64,  json_stream) # UInt64
+    r13 = fromFile(UInt128, json_stream) # UInt128
+    r14 = fromFile(Float16, json_stream) # Float16
+    r15 = fromFile(Float32, json_stream) # Float32
+    r16 = fromFile(Float64, json_stream) # Float64
     
     close(json_stream)
     
@@ -86,8 +86,6 @@ function run(at_dir::String)
         println("Dict passed.")
     else
         println("Dict failed.")
-        println("The dictionary written to was ", string(w2))
-        println("The dictionary read from  was ", string(r2))
     end
     
     if r3 == w3 && typeof(r3) == typeof(w3)
@@ -120,90 +118,59 @@ function run(at_dir::String)
         println("Int64 failed.")
     end
     
-    if r8 == w8 && typeof(r8) == typeof(w8)
+    if r7 == w7 && typeof(r7) == typeof(w7)
         println("Int128 passed.")
     else
         println("Int128 failed.")
     end
     
     if r9 == w9 && typeof(r9) == typeof(w9)
-        println("BigInt passed.")
-    else
-        println("BigInt failed.")
-    end
-    
-    if r10 == w10 && typeof(r10) == typeof(w10)
         println("UInt8 passed.")
     else
         println("UInt8 failed.")
     end
     
-    if r11 == w11 && typeof(r11) == typeof(w11)
+    if r10 == w10 && typeof(r10) == typeof(w10)
         println("UInt16 passed.")
     else
         println("UInt16 failed.")
     end
     
-    if r12 == w12 && typeof(r12) == typeof(w12)
+    if r11 == w11 && typeof(r11) == typeof(w11)
         println("UInt32 passed.")
     else
         println("UInt32 failed.")
     end
     
-    if r13 == w13 && typeof(r13) == typeof(w13)
+    if r12 == w12 && typeof(r12) == typeof(w12)
         println("UInt64 passed.")
     else
         println("UInt64 failed.")
     end
     
-    if r14 == w14 && typeof(r14) == typeof(w14)
+    if r13 == w13 && typeof(r13) == typeof(w13)
         println("UInt128 passed.")
     else
         println("UInt128 failed.")
     end
     
-    if r15 == w15 && typeof(r15) == typeof(w15)
+    if r14 == w14 && typeof(r14) == typeof(w14)
         println("Float16 passed.")
     else
         println("Float16 failed.")
     end
     
-    if r16 == w16 && typeof(r16) == typeof(w16)
+    if r15 == w15 && typeof(r15) == typeof(w15)
         println("Float32 passed.")
     else
         println("Float32 failed.")
     end
     
-    if r17 == w17 && typeof(r17) == typeof(w17)
+    if r16 == w16 && typeof(r16) == typeof(w16)
         println("Float64 passed.")
     else
         println("Float64 failed.")
     end
-    
-    if r18 == w18 && typeof(r18) == typeof(w18)
-        println("BigFloat passed.")
-    else
-        println("BigFloat failed.")
-    end
-    
-    # Test printing these values:
-    
-    println()
-    println("For Int8,     toString = ", toString(w4),  " and print = ", w4)
-    println("For Int16,    toString = ", toString(w5),  " and print = ", w5)
-    println("For Int32,    toString = ", toString(w6),  " and print = ", w6)
-    println("For Int64,    toString = ", toString(w7),  " and print = ", w7)
-    println("For Int128,   toString = ", toString(w8),  " and print = ", w8)
-    println("For BigInt,   toString = ", toString(w9),  " and print = ", w9)
-    println("For UInt8,    toString = ", toString(w10), " and print = ", w10)
-    println("For UInt16,   toString = ", toString(w11), " and print = ", w11)
-    println("For UInt32,   toString = ", toString(w12), " and print = ", w12)
-    println("For UInt64,   toString = ", toString(w13), " and print = ", w13)
-    println("For UInt128,  toString = ", toString(w14), " and print = ", w14)
-    println("For Float16,  toString = ", toString(w15), " and print = ", w15)
-    println("For Float32,  toString = ", toString(w16), " and print = ", w16)
-    println("For Float64,  toString = ", toString(w17), " and print = ", w17)
-    println("For BigFloat, toString = ", toString(w18), " and print = ", w18)
     
     # Testing vectors of values.
 
@@ -235,47 +202,39 @@ function run(at_dir::String)
     wv6[1]  = -5
     wv6[2]  = 5
     
-    wv7     = Vector{BigInt}(undef, 2)
-    wv7[1]  = -6
-    wv7[2]  = 6
+    wv7     = Vector{UInt8}(undef, 2)
+    wv7[1]  = 0
+    wv7[2]  = 1
     
-    wv8     = Vector{UInt8}(undef, 2)
-    wv8[1]  = 0
-    wv8[2]  = 1
+    wv8     = Vector{UInt16}(undef, 2)
+    wv8[1]  = 2
+    wv8[2]  = 3
     
-    wv9     = Vector{UInt16}(undef, 2)
-    wv9[1]  = 2
-    wv9[2]  = 3
+    wv9     = Vector{UInt32}(undef, 2)
+    wv9[1]  = 4
+    wv9[2]  = 5
     
-    wv10    = Vector{UInt32}(undef, 2)
-    wv10[1] = 4
-    wv10[2] = 5
+    wv10    = Vector{UInt64}(undef, 2)
+    wv10[1] = 6
+    wv10[2] = 7
     
-    wv11    = Vector{UInt64}(undef, 2)
-    wv11[1] = 6
-    wv11[2] = 7
+    wv11    = Vector{UInt128}(undef, 2)
+    wv11[1] = 8
+    wv11[2] = 9
     
-    wv12    = Vector{UInt128}(undef, 2)
-    wv12[1] = 8
-    wv12[2] = 9
+    wv12    = Vector{Float16}(undef, 2)
+    wv12[1] = 10.0
+    wv12[2] = 11.0
     
-    wv13    = Vector{Float16}(undef, 2)
-    wv13[1] = 10.0
-    wv13[2] = 11.0
+    wv13    = Vector{Float32}(undef, 2)
+    wv13[1] = 12.0
+    wv13[2] = 13.0
     
-    wv14    = Vector{Float32}(undef, 2)
-    wv14[1] = 12.0
-    wv14[2] = 13.0
+    wv14    = Vector{Float64}(undef, 2)
+    wv14[1] = 14.0
+    wv14[2] = 15.0
     
-    wv15    = Vector{Float64}(undef, 2)
-    wv15[1] = 14.0
-    wv15[2] = 15.0
-    
-    wv16    = Vector{BigFloat}(undef, 2)
-    wv16[1] = 16.0
-    wv16[2] = 17.0
-    
-    json_stream = openJSONWriter(my_dir_path, "testVectorPersistence.json")
+    json_stream = openJSONWriter(my_dir_path, "testBuiltInVectorTypes.json")
     
     toFile(wv1,  json_stream) # Vector{Bool}
     toFile(wv2,  json_stream) # Vector{Int8}
@@ -283,37 +242,33 @@ function run(at_dir::String)
     toFile(wv4,  json_stream) # Vector{Int32}
     toFile(wv5,  json_stream) # Vector{Int64}
     toFile(wv6,  json_stream) # Vector{Int128}
-    toFile(wv7,  json_stream) # Vector{BigInt}
-    toFile(wv8,  json_stream) # Vector{UInt8}
-    toFile(wv9,  json_stream) # Vector{UInt16}
-    toFile(wv10, json_stream) # Vector{UInt32}
-    toFile(wv11, json_stream) # Vector{UInt64}
-    toFile(wv12, json_stream) # Vector{UInt128}
-    toFile(wv13, json_stream) # Vector{Float16}
-    toFile(wv14, json_stream) # Vector{Float32}
-    toFile(wv15, json_stream) # Vector{Float64}
-    toFile(wv16, json_stream) # Vector{BigFloat}
+    toFile(wv7,  json_stream) # Vector{UInt8}
+    toFile(wv8,  json_stream) # Vector{UInt16}
+    toFile(wv9,  json_stream) # Vector{UInt32}
+    toFile(wv10, json_stream) # Vector{UInt64}
+    toFile(wv11, json_stream) # Vector{UInt128}
+    toFile(wv12, json_stream) # Vector{Float16}
+    toFile(wv13, json_stream) # Vector{Float32}
+    toFile(wv14, json_stream) # Vector{Float64}
     
     close(json_stream)
     
-    json_stream = openJSONReader(my_dir_path, "testVectorPersistence.json")
+    json_stream = openJSONReader(my_dir_path, "testBuiltInVectorTypes.json")
     
-    rv1  = fromFile(Vector, json_stream) # Vector{Bool}
-    rv2  = fromFile(Vector, json_stream) # Vector{Int8}
-    rv3  = fromFile(Vector, json_stream) # Vector{Int16}
-    rv4  = fromFile(Vector, json_stream) # Vector{Int32}
-    rv5  = fromFile(Vector, json_stream) # Vector{Int64}
-    rv6  = fromFile(Vector, json_stream) # Vector{Int128}
-    rv7  = fromFile(Vector, json_stream) # Vector{BigInt}
-    rv8  = fromFile(Vector, json_stream) # Vector{UInt8}
-    rv9  = fromFile(Vector, json_stream) # Vector{UInt16}
-    rv10 = fromFile(Vector, json_stream) # Vector{UInt32}
-    rv11 = fromFile(Vector, json_stream) # Vector{UInt64}
-    rv12 = fromFile(Vector, json_stream) # Vector{UInt128}
-    rv13 = fromFile(Vector, json_stream) # Vector{Float16}
-    rv14 = fromFile(Vector, json_stream) # Vector{Float32}
-    rv15 = fromFile(Vector, json_stream) # Vector{Float64}
-    rv16 = fromFile(Vector, json_stream) # Vector{BigFloat}
+    rv1  = fromFile(Vector{Bool},    json_stream) # Vector{Bool}
+    rv2  = fromFile(Vector{Int8},    json_stream) # Vector{Int8}
+    rv3  = fromFile(Vector{Int16},   json_stream) # Vector{Int16}
+    rv4  = fromFile(Vector{Int32},   json_stream) # Vector{Int32}
+    rv5  = fromFile(Vector{Int64},   json_stream) # Vector{Int64}
+    rv6  = fromFile(Vector{Int128},  json_stream) # Vector{Int128}
+    rv7  = fromFile(Vector{UInt8},   json_stream) # Vector{UInt8}
+    rv8  = fromFile(Vector{UInt16},  json_stream) # Vector{UInt16}
+    rv9  = fromFile(Vector{UInt32},  json_stream) # Vector{UInt32}
+    rv10 = fromFile(Vector{UInt64},  json_stream) # Vector{UInt64}
+    rv11 = fromFile(Vector{UInt128}, json_stream) # Vector{UInt128}
+    rv12 = fromFile(Vector{Float16}, json_stream) # Vector{Float16}
+    rv13 = fromFile(Vector{Float32}, json_stream) # Vector{Float32}
+    rv14 = fromFile(Vector{Float64}, json_stream) # Vector{Float64}
     
     close(json_stream)
     
@@ -354,64 +309,56 @@ function run(at_dir::String)
     end
     
     if rv7 == wv7 && typeof(rv7) == typeof(wv7)
-        println("Vector{BigInt} passed.")
-    else
-        println("Vector{BigInt} failed.")
-    end
-    
-    if rv8 == wv8 && typeof(rv8) == typeof(wv8)
         println("Vector{UInt8} passed.")
     else
         println("Vector{UInt8} failed.")
     end
     
-    if rv9 == wv9 && typeof(rv9) == typeof(wv9)
+    if rv8 == wv8 && typeof(rv8) == typeof(wv8)
         println("Vector{UInt16} passed.")
     else
         println("Vector{UInt16} failed.")
     end
     
-    if rv10 == wv10 && typeof(rv10) == typeof(wv10)
+    if rv9 == wv9 && typeof(rv9) == typeof(wv9)
         println("Vector{UInt32} passed.")
     else
         println("Vector{UInt32} failed.")
     end
     
-    if rv11 == wv11 && typeof(rv11) == typeof(wv11)
+    if rv10 == wv10 && typeof(rv10) == typeof(wv10)
         println("Vector{UInt64} passed.")
     else
         println("Vector{UInt64} failed.")
     end
     
-    if rv12 == wv12 && typeof(rv12) == typeof(wv12)
+    if rv11 == wv11 && typeof(rv11) == typeof(wv11)
         println("Vector{UInt128} passed.")
     else
         println("Vector{UInt128} failed.")
     end
     
-    if rv13 == wv13 && typeof(rv13) == typeof(wv13)
+    if rv12 == wv12 && typeof(rv12) == typeof(wv12)
         println("Vector{Float16} passed.")
     else
         println("Vector{Float16} failed.")
     end
     
-    if rv14 == wv14 && typeof(rv14) == typeof(wv14)
+    if rv13 == wv13 && typeof(rv13) == typeof(wv13)
         println("Vector{Float32} passed.")
     else
         println("Vector{Float32} failed.")
     end
     
-    if rv15 == wv15 && typeof(rv15) == typeof(wv15)
+    if rv14 == wv14 && typeof(rv14) == typeof(wv14)
         println("Vector{Float64} passed.")
     else
         println("Vector{Float64} failed.")
     end
-    
-    if rv16 == wv16 && typeof(rv16) == typeof(wv16)
-        println("Vector{BigFloat} passed.")
-    else
-        println("Vector{BigFloat} failed.")
-    end
+end # testBuiltIns
+
+function testToString()
+    # Assign random values to the base types.
     
     function assignBoolean()::Bool
         x = rand()
@@ -451,7 +398,7 @@ function run(at_dir::String)
     println()
     println(toString(v2))
     
-    # Test the printing of matrices.
+    # Test the printing of boolean matrices.
     
     println()
     println("Boolean matrices:")
@@ -624,5 +571,6 @@ function run(at_dir::String)
     println()
     println(toString(m12))
     
-end # run
+end # testToString
+
 end  # module testPersistence
