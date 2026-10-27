@@ -62,8 +62,8 @@ where the value of a physical scalar, say `scalar.value,` is held as an element 
 There are three constructors to select from. They are
 ```
 function VectorOfPhysicalScalars(length::Integer)
-function VectorOfPhysicalScalars(values::MVector, units::VectorOfPhysicalUnits)
 function VectorOfPhysicalScalars(values::Vector{<:Real}, units::VectorOfPhysicalUnits)
+function VectorOfPhysicalScalars(values::MVector, units::VectorOfPhysicalUnits)
 ```
 These constructors will return a new vector of scalars whose length is specified by argument `length,` wherein all elements of the vector have their own set of physical units specified by argument `units.` The first constructor creates a vector with dimensionless values, while the remaining constructors assign scalars to this internal vector whose `values` and `units` are supplied as separate vectors with dimension `length.`
 
@@ -85,8 +85,8 @@ wherein a scalar field has its value stored in `values` and its physical units s
 There are three constructors to choose from
 ```
 function MatrixOfPhysicalScalars(rows::Integer, columns::Integer)
-function MatrixOfPhysicalScalars(values::MMatrix, units::MatrixOfPhysicalUnits)
 function MatrixOfPhysicalScalars(values::Matrix{<:Real}, units::MatrixOfPhysicalUnits)
+function MatrixOfPhysicalScalars(values::MMatrix, units::MatrixOfPhysicalUnits)
 ```
 where the matrix has dimension `rows`×`columns.`
 
@@ -170,6 +170,16 @@ and convert an array of scalars between CGS and SI units by calling
 function toSI(y::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
 function toCGS(y::ArrayOfPhysicalScalars)::ArrayOfPhysicalScalars
 ```
+convert a vector of scalars between CGS and SI units by calling
+```
+function toSI(y::VectorOfPhysicalScalars)::VectorOfPhysicalScalars
+function toCGS(y::VectorOfPhysicalScalars)::VectorOfPhysicalScalars
+```
+while converting a matrix of scalars between CGS and SI units by calling
+```
+function toSI(y::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
+function toCGS(y::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
+```
 
 ## Unit Testing
 
@@ -177,16 +187,22 @@ To test a scalar or an array of scalars to see if they are dimensionless, call
 ```
 function isDimensionless(y::PhysicalScalar)::Bool
 function isDimensionless(y::ArrayOfPhysicalScalars)::Bool
+function isDimensionless(y::VectorOfPhysicalScalars)::Bool
+function isDimensionless(y::MatrixOfPhysicalScalars)::Bool
 ```
 To test a scalar or an array of scalars to see if they have SI units, call
 ```
 function isSI(y::PhysicalScalar)::Bool
 function isSI(y::ArrayOfPhysicalScalars)::Bool
+function isSI(y::VectorOfPhysicalScalars)::Bool
+function isSI(y::MatrixOfPhysicalScalars)::Bool
 ```
 To test a scalar or an array of scalars to see if they have CGS units, call
 ```
 function isCGS(y::PhysicalScalar)::Bool
 function isCGS(y::ArrayOfPhysicalScalars)::Bool
+function isCGS(y::VectorOfPhysicalScalars)::Bool
+function isCGS(y::MatrixOfPhysicalScalars)::Bool
 ```
 
 ## Operators
@@ -203,9 +219,11 @@ The overloaded binary operators include: `+`, `-`, `*`, `/` and `^`.
 
 ### ArrayOfPhysicalScalars
 
-The overloaded logical operators include: `==`, `≠` and `≈`. 
+The overloaded logical operators include: `==`, `≠`, `≈`, `<`, `≤`, `≥` and `>`. 
 
-The overloaded binary operators include: `+`, `-` and `*`.
+The overloaded unary operators include: `+` and `-`. 
+
+The overloaded binary operators include: `+`, `-`, `*`, `/` and `^`.
 
 ### VectorOfPhysicalScalars
 
@@ -219,9 +237,7 @@ The overloaded logical operators include: `==`, `≠` and `≈`.
 
 The overloaded binary operators include: `+`, `-` and `*`.
 
-## Math functions
-
-### PhysicalScalar
+## Math functions for PhysicalScalar
 
 The following methods are math functions that return a physical scalar and can handle arguments that are scalars with physical dimensions.
 
@@ -262,13 +278,12 @@ function exp(y::PhysicalScalar)::Real
 function exp2(y::PhysicalScalar)::Real
 function exp10(y::PhysicalScalar)::Real
 ```
-These are the same functions that have been extended for mutable numbers found [here](./README_MutableTypes.md).
-
-### MatrixOfPhysicalScalars
-
+while a matrix of physical scalars inverts according to
 ```
 function inv(y::MatrixOfPhysicalScalars)::MatrixOfPhysicalScalars
 ```
+
+These are the same functions that have been extended for mutable numbers found [here](./README_MutableTypes.md).
 
 [Home Page](./README.md)
 [Prev Page](./README_PhysicalUnits.md)

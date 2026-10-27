@@ -20,7 +20,7 @@ struct ArrayOfPhysicalVectors <: ArrayOfPhysicalFields
     units::PhysicalUnits    # physical units of the vector array
 end
 ```
-where all entries in the array are vectors with the same length and the same physical system of units.
+where all entries in the array are vectors with the same length and the same physical system of units; therefore, such an array serves as a container for solutions gathered along a solution path.
 
 ## Constructors
 
@@ -44,7 +44,7 @@ function ArrayOfPhysicalVectors(array_length::Integer, vector_length::Integer, u
 function ArrayOfPhysicalVectors(array::Matrix{<:Real}, units::PhysicalUnits)
 function ArrayOfPhysicalVectors(array::MMatrix, units::PhysicalUnits)
 ```
-These constructors will return a new array of vector objects of like length and physical units. The length of the array of vectors is specified by argument `array_length.` The length of each vector held by this array is the same and is specified by argument `vector_length.` The physical units for each of these vectors are the same, and is specified by argument `units.` The first constructor assigns numeric values of zero to each element of each vector field held in the array. The other two constructors assign numeric values to each vector field held in the array, as specified by argument `array,` which is a matrix of dimension `array_length`×`vector_length.`
+These constructors will return a new array of vector objects of like length and physical units. The length of the array of vectors is specified by argument `array_length.` The length of each vector held by this array is the same and are specified by argument `vector_length.` The physical units for each of these vectors are the same, too, and is specified by argument `units.` The first constructor assigns numeric values of zero to each element of each vector field held in the array. The other two constructors assign numeric values to each vector field held in the array, as specified by argument `array,` which is a matrix of dimension `array_length`×`vector_length.`
 
 ## Methods
 

@@ -1,7 +1,7 @@
 % PhysicalFields
 % author Alan Freed
-% version 1.4.0
-% date Aug 26 2026
+% version 1.5.0
+% date Oct 26, 2026
 
 # PhysicalFields
 
@@ -45,15 +45,15 @@ The SI system of units is taken as the default system of units.
 
 4. [Physical Scalars](./README_PhysicalScalars.md)
 
-A physical scalar has a numeric quantity represented as a number whose value depends upon the system of units in which it is evaluated in. Arrays of physical scalars are useful as containers, e.g., holding values for a scalar field gathered along a solution path.
+A physical scalar has a numeric quantity represented as a number whose value depends upon the system of units in which it is evaluated in. Arrays, vectors and matrices of physical scalars are useful as containers. An `ArrayOfPhysicalScalars` has entries with the same set of physical units, e.g., holding values for a scalar field gathered along a solution path, while `VectorOfPhysicalScalars` and `MatrixOfPhysicalScalars` have entries where each may have their own set of physical units, e.g., a thermodynamic constitutive equation where the intensive and extensive variables constitute elements of two `VectorOfPhysicalScalars` whose associated thermodynamic Jacobian, a `MatrixOfPhysicalScalars,` describes a linear mapping between them.
 
 5. [Physical Vectors](./README_PhysicalVectors.md)
 
-A physical vector has a numeric quantity represented as a one-dimensional array of numbers whose values depend upon the system of units in which the array is evaluated in. Arrays of physical vectors are useful as containers, e.g., holding values for a vector field gathered along a solution path.
+A physical vector has a numeric quantity represented as a one-dimensional array of numbers whose values depend upon the system of units in which the array is evaluated in. An `ArrayOfPhysicalVectors` is useful as a container, e.g., holding values for a vector field gathered along a solution path.
 
 6. [Physical Tensors](./README_PhysicalTensors.md)
 
-A physical tensor has a numeric quantity represented as a matrix or two-dimensional array of numbers whose values depend upon the system of units in which the matrix is evaluated in. Arrays of physical tensors are useful as containers, e.g., holding values for a tensor field gathered along a solution path.
+A physical tensor has a numeric quantity represented as a matrix or two-dimensional array of numbers whose values depend upon the system of units in which the matrix is evaluated in. An `ArrayOfPhysicalTensors` is useful as a container, e.g., holding values for a tensor field gathered along a solution path.
 
 [Next Page](./README_Persistence.md)
 
@@ -61,7 +61,7 @@ A physical tensor has a numeric quantity represented as a matrix or two-dimensio
 
 ### Version 1.5.0
 
-Introduced types `VectorOfPhysicalUnits,`   `MatrixOfPhysicalUnits,` `VectorOfPhysicalScalars` and `MatrixOfPhysicalScalars,` which differs from `ArrayOfPhysicalScalars` wherein all entries have the same set of physical units.  In  `VectorOfPhysicalUnits,`   `MatrixOfPhysicalUnits,` `VectorOfPhysicalScalars` and `MatrixOfPhysicalScalars` each vector or matrix element has its own physical units.
+Introduced types `VectorOfPhysicalUnits,`   `MatrixOfPhysicalUnits,` `VectorOfPhysicalScalars` and `MatrixOfPhysicalScalars,` which differs from `ArrayOfPhysicalScalars` wherein all entries have the same set of physical units.  In  `VectorOfPhysicalUnits,`   `MatrixOfPhysicalUnits,` `VectorOfPhysicalScalars` and `MatrixOfPhysicalScalars` each vector or matrix element has its own physical units. Ported from using JSON3.jl to using JSON.jl since JSON3.jl is no longer supported.
 
 ### Version 1.4.0
 

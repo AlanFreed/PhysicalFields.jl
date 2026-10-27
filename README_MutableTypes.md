@@ -9,10 +9,11 @@ The intent of mutable types is for their use in immutable data structures that c
 
 ## Abstract Type
 
-Mutable numeric types are sub-types to abstract type:
+Mutable numeric types are sub-types to abstract types:
 
 ```
-abstract type MNumber <: Number end
+abstract type MNumbers <: Number end
+abstract type MArrays end
 ```
 
 ## Concrete Types
@@ -21,40 +22,40 @@ Mutable types are wrappers around basic, numeric, Julia types.
 
 Mutable boolean values belong to the type:
 ```
-mutable struct MBoolean
+mutable struct MBoolean <: MNumbers
     b::Bool    # Bool <: Integer <: Real <: Number
 end
 ```
 
 Mutable integer numbers belong to the type:
 ```
-mutable struct MInteger <: MNumber
+mutable struct MInteger <: MNumbers
     n::Int64    # Int64 <: Signed <: Integer <: Real <: Number
 end
 ```
 
 Mutable real numbers belong to the type:
 ```
-mutable struct MReal <: MNumber
-    n::Float64    # Float64 <: AbstractFloat <: Real <: Number
+mutable struct MReal <: MNumbers
+    x::Float64    # Float64 <: AbstractFloat <: Real <: Number
 end
 ```
 
 Mutable vectors (1D arrays) belong to the type:
 ```
-struct MVector
-    len::UInt32             # Length of a vector, which is fixed.
-    vec::Vector{Float64}    # Column vector with mutable elements.
+struct MVector <: MArrays
+    len::UInt32             # A vector's length, which is fixed.
+    vec::Vector{Float64}    # A column vector with mutable elements.
 end
 ```
 whose whose elements `vec` are mutable, but whose dimension (length `len)` is immutable.
 
 Mutable matrices (2D arrays) belong to the type:
 ```
-struct MMatrix
+sstruct MMatrix <: MArrays
     rows::UInt16            # Rows in a matrix, which is fixed.
     cols::UInt16            # Columns in a matrix, which is fixed.
-    vec::Vector{Float64}    # Matrix reshaped as a column vector with mutable elements.
+    vec::Vector{Float64}    # A matrix reshaped as a column vector with mutable elements.
 end
 ```
 whose elements `vec` are mutable, but whose dimensions (rows `rows` and columns `cols)` are immutable. Vector `vec` indexes along the matrix's column vectors according to the mapping
@@ -65,20 +66,22 @@ so that, e.g., `matrix[row, column]` returns `matrix.vec[index].` All indexing i
 
 Mutable 3D arrays belong to the type:
 ```
-struct MArray
+struct MArray <: MArrays
     pp::UInt16              # Pages in an array, which is fixed.
+                            #    Each page contains a rows×cols matrix.
     rows::UInt16            # Matrix rows in each page, which is fixed.
     cols::UInt16            # Matrix columns in each page, which is fixed.
     vec::Vector{Float64}    # Array reshaped as a vector with mutable elements.
+
 end
 ```
 whose elements `vec` are mutable, but whose dimensions (pages `pp,` rows `rows` and columns `cols)` are immutable. Each page contains a `rows`×`cols` matrix. Vector `vec` indexes along the array's columns according to the mapping
 ```
-index = page + (row - 1)*pp + (column - 1)*pp*rows
+index = page + pp*((row - 1) + (column - 1)*rows)
 ```
 so that, e.g., `array[page, row, column]` returns `array.vec[index].` All indexing is handled internally.
 
-Mutable matrices and 3D arrays originally contained their components in a 1D format, viz., field `vec,` so that their data could be made persistent using the interface of package `JSON3.jl.` Since then `JSON3` has evolved into a much more robust package so this restriction is no longer necessary; nevertheless, matrices and 3D arrays used herein continue to be handled in memory in their column vector representations.
+Mutable matrices and 3D arrays contain their components in a 1D format, viz., field `vec,` so that their data can be made persistent using the interface of package `JSON.jl.` 
 
 ### Constructors
 
@@ -298,8 +301,9 @@ function exp(y::MNumber)::Real
 function exp2(y::MNumber)::Real
 function exp10(y::MNumber)::Real
 ```
-which return instances of type `Real,` not `MReal,` because `MReal`'s are intended to represent mutable fields in an immutable data `struct.`
-Trigonometrically speaking, `y` is the rise and `x` is the run in the `atan` method with two arguments.
+all of which return instances of type `Real,` not `MReal,` because `MReal`'s are intended to represent mutable fields in an immutable data `struct.` Here `MNumber ∈ {MInteger, MReal}.`
+
+Trigonometrically speaking, `y` is the rise and `x` is the run in the `atan(y,x)` method with two arguments.
 
 ### Methods for `MVector.`
 
@@ -310,19 +314,17 @@ function norm(y::MVector, p::Real=2)::Real
 
 To get a unit vector, call method:
 ```
-function unitVector(y::MVector)::MVector
-function unitVector(y::Vector{<:Real})::MVector
+function unitVector(y::Vector{<:Real})::Vector
+function unitVector(y::MVector)::Vector
 ```
 
 To compute the cross product between two vectors, i.e., `y × z,` call method:
 ```
-function cross(y::MVector, z::MVector)::MVector
-function cross(y::Vector{<:Real}, z::MVector)::MVector
-function cross(y::MVector, z::Vector{<:Real})::MVector
+function cross(y::MVector, z::MVector)::Vector
+function cross(y::Vector{<:Real}, z::MVector)::Vector
+function cross(y::MVector, z::Vector{<:Real})::Vector
 ```
 The cross product is only defined for vectors of length 3.
-
-Functions on a `MVector` return a `MVector,` unlike functions on a `MInteger` or `MReal,` which return an `Integer` or a `Real`.
 
 ### Functions for `MMatrix`
 
@@ -333,7 +335,7 @@ function norm(y::MMatrix, p::Real=2)::Real
 
 To get the transpose of a matrix, call method:
 ```
-function transpose(y::MMatrix)::MMatrix
+function transpose(y::MMatrix)::Matrix
 ```
 
 To get the trace of a matrix, call method:
@@ -348,7 +350,7 @@ function det(y::MMatrix)::Real
 
 To get the inverse of a matrix, if it exists, call method:
 ```
-function inv(y::MMatrix)::MMatrix
+function inv(y::MMatrix)::Matrix
 ```
 
 To get the **QR** or Gram-Schmidt decomposition of a matrix, call method:
@@ -367,10 +369,10 @@ For example, `(L, Q) = lq(matrix)` where matrix `L` is lower triangular and matr
 
 To construct a matrix as a product between two vectors, e.g., `m[i,j] = y[i] z[j],` call method:
 ```
-function matrixProduct(y::Vector{<:Real}, z::Vector{<:Real})::Matrix{<:Real}
-function matrixProduct(y::MVector, z::MVector)::MMatrix
-function matrixProduct(y::Vector{<:Real}, z::MVector)::MMatrix
-function matrixProduct(y::MVector, z::Vector{<:Real})::MMatrix
+function matrixProduct(y::Vector{<:Real}, z::Vector{<:Real})::Matrix
+function matrixProduct(y::MVector, z::MVector)::Matrix
+function matrixProduct(y::Vector{<:Real}, z::MVector)::Matrix
+function matrixProduct(y::MVector, z::Vector{<:Real})::Matrix
 ```
 
 [Home Page](./README.md)

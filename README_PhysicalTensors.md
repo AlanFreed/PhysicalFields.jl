@@ -20,7 +20,7 @@ struct ArrayOfPhysicalTensors <: ArrayOfPhysicalFields
     units::PhysicalUnits    # physical units of the tensor array
 end
 ```
-where all tensor entries in the array have the same dimensions (rows by columns) and the same physical units.
+where all tensor entries in the array have the same dimensions (rows by columns) and the same physical units; therefore, such an array can serve as a container of tensor solutions gathered along a solution path.
 
 ## Constructors
 
@@ -28,7 +28,6 @@ There are three internal constructors. The first assigns zeros to the array fiel
 
 ### PhysicalTensor
 
-Constructors
 ```
 function PhysicalTensor(rows::Integer, columns::Integer, units::PhysicalUnits)
 function PhysicalTensor(matrix::Matrix{<:Real}, units::PhysicalUnits)
@@ -36,13 +35,14 @@ function PhysicalTensor(matrix::MMatrix, units::PhysicalUnits)
 ```
 These constructors will return a new tensor object of dimension `rows`×`columns.` The physical units of the tensor are specified by argument `units.` The first constructor assigns numeric values of zero to each element of the matrix field. The other two constructors assign numeric values to their matrix field, as specified by argument `matrix.`
 
-Constructors
+### ArrayOfPhysicalTensors
+
 ```
 function ArrayOfPhysicalTensors(array_length::Integer, tensor_rows::Integer, tensor_columns::Integer, units::PhysicalUnits)
 function ArrayOfPhysicalTensors(array::Array{<:Real,3}, units::PhysicalUnits)
 function ArrayOfPhysicalTensors(array::MArray, units::PhysicalUnits)
 ```
-These constructors will return a new array of tensor objects of like dimension (rows × columns) and physical units. The length of the array of tensors is specified by argument `array_length.` The dimensions of each tensor held by this array are the same, and are specified by arguments `tensor_rows` and `tensor_columns.` The physical units for each of these tensors are the same, and is specified by argument `units.` The first constructor assigns numeric values of zero to each element of each matrix entry held in the array. The other two constructors assign numeric values to each matrix field held in the array, as specified by argument `array,` which is a matrix of dimension `array_length`×`tensor_rows`×`tensor_columns.`
+These constructors will return a new array of tensor objects of like dimension (rows × columns) and physical units. The length of the array of tensors is specified by argument `array_length.` The dimensions of each tensor held by this array are the same, and are specified by arguments `tensor_rows` and `tensor_columns.` The physical units for each of these tensors are the same, too, and is specified by argument `units.` The first constructor assigns numeric values of zero to each element of each matrix entry held in the array. The other two constructors assign numeric values to each matrix field held in the array, as specified by argument `array,` which is a matrix of dimension `array_length`×`tensor_rows`×`tensor_columns.`
 
 ## Methods
 
